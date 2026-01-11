@@ -527,8 +527,9 @@ function updateDisplay() {
 }
 
 function draw() {
-    // Clear canvas
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    // Clear canvas completely
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw grid
@@ -567,21 +568,19 @@ function draw() {
             }
         }
 
-        // Draw ghost piece
+        // Draw ghost piece (outline only)
         let ghostRow = currentPosition.row;
         while (canPlace(currentPiece, { row: ghostRow + 1, col: currentPosition.col })) {
             ghostRow++;
         }
         if (ghostRow !== currentPosition.row) {
-            ctx.globalAlpha = 0.3;
             for (const cell of cells) {
                 const row = ghostRow + cell.row;
                 const col = currentPosition.col + cell.col;
                 if (row >= 0) {
-                    drawCell(ctx, col, row, currentPiece.color);
+                    drawGhostCell(ctx, col, row, currentPiece.color);
                 }
             }
-            ctx.globalAlpha = 1;
         }
     }
 }
@@ -606,8 +605,22 @@ function drawCell(context, col, row, color) {
     context.fillRect(x + padding, y + CELL_SIZE - padding - 4, CELL_SIZE - padding * 2, 4);
 }
 
+function drawGhostCell(context, col, row, color) {
+    const x = col * CELL_SIZE;
+    const y = row * CELL_SIZE;
+    const padding = 2;
+
+    // Draw outline only
+    context.strokeStyle = color;
+    context.lineWidth = 2;
+    context.globalAlpha = 0.4;
+    context.strokeRect(x + padding + 1, y + padding + 1, CELL_SIZE - padding * 2 - 2, CELL_SIZE - padding * 2 - 2);
+    context.globalAlpha = 1;
+}
+
 function drawNextPiece() {
-    nextCtx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    nextCtx.fillStyle = '#1a1a2e';
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
 
     if (!nextPiece) return;

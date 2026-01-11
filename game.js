@@ -992,6 +992,8 @@ function setupTouchButton(button, action) {
 
     const startAction = (e) => {
         e.preventDefault();
+        // Start music on first touch interaction
+        startMusicOnInteraction();
         action();
         // For continuous actions (left, right, down), repeat while held
         if (action === moveLeft || action === moveRight || action === moveDown) {
@@ -1013,6 +1015,7 @@ function setupTouchButton(button, action) {
     button.addEventListener('click', (e) => {
         // Only handle click if not a touch event
         if (!e.sourceCapabilities || !e.sourceCapabilities.firesTouchEvents) {
+            startMusicOnInteraction();
             action();
         }
     });

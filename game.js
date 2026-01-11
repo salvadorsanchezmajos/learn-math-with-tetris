@@ -934,40 +934,22 @@ soundToggle.addEventListener('click', () => {
     soundOff.classList.toggle('hidden', !isMuted);
 });
 
-// Start music on first user interaction (required by browsers, especially mobile)
-let musicInitialized = false;
-
-function startMusicOnInteraction(e) {
-    if (musicInitialized) return;
-
-    // Must initialize AudioContext inside a user gesture for mobile
+// Start music on user interaction (required by browsers, especially mobile)
+function startMusicOnInteraction() {
+    // Always try to initialize and resume - mobile browsers are strict
     gameMusic.init();
 
-    // Resume audio context if suspended (common on mobile)
+    // Always try to resume if suspended (mobile requirement)
     if (gameMusic.audioContext && gameMusic.audioContext.state === 'suspended') {
         gameMusic.audioContext.resume().then(() => {
-            if (!gameMusic.isMuted) {
+            if (!gameMusic.isMuted && !gameMusic.isPlaying) {
                 gameMusic.start();
             }
         });
-    } else {
+    } else if (!gameMusic.isMuted && !gameMusic.isPlaying) {
         gameMusic.start();
     }
-
-    musicInitialized = true;
-
-    // Remove all listeners
-    document.removeEventListener('click', startMusicOnInteraction);
-    document.removeEventListener('keydown', startMusicOnInteraction);
-    document.removeEventListener('touchstart', startMusicOnInteraction);
-    document.removeEventListener('touchend', startMusicOnInteraction);
 }
-
-// Use multiple events to catch first interaction on any device
-document.addEventListener('click', startMusicOnInteraction);
-document.addEventListener('keydown', startMusicOnInteraction);
-document.addEventListener('touchstart', startMusicOnInteraction);
-document.addEventListener('touchend', startMusicOnInteraction);
 
 // Allow Enter key to submit answer
 numeratorInput.addEventListener('keydown', (e) => {

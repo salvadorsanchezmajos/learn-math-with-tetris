@@ -173,11 +173,27 @@ class GameMusic {
     }
 
     init() {
-        if (this.audioContext) return;
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.connect(this.audioContext.destination);
-        this.masterGain.gain.value = 0.3;
+        if (this.audioContext) {
+            // If already created, just try to resume if suspended
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            return;
+        }
+
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.connect(this.audioContext.destination);
+            this.masterGain.gain.value = 0.3;
+
+            // Try to resume immediately (needed for some mobile browsers)
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+        } catch (e) {
+            console.log('Web Audio API not supported');
+        }
     }
 
     playNote(frequency, startTime, duration, type = 'square', gainValue = 0.3) {
@@ -919,23 +935,48 @@ submitAnswer.addEventListener('click', submitAnswerHandler);
 
 // Sound toggle
 soundToggle.addEventListener('click', () => {
+    // Initialize audio context on first click (required for mobile)
+    gameMusic.init();
     const isMuted = gameMusic.toggle();
     soundToggle.setAttribute('data-muted', isMuted);
     soundOn.classList.toggle('hidden', isMuted);
     soundOff.classList.toggle('hidden', !isMuted);
 });
 
-// Start music on first user interaction (required by browsers)
-function startMusicOnInteraction() {
-    gameMusic.start();
+// Start music on first user interaction (required by browsers, especially mobile)
+let musicInitialized = false;
+
+function startMusicOnInteraction(e) {
+    if (musicInitialized) return;
+
+    // Must initialize AudioContext inside a user gesture for mobile
+    gameMusic.init();
+
+    // Resume audio context if suspended (common on mobile)
+    if (gameMusic.audioContext && gameMusic.audioContext.state === 'suspended') {
+        gameMusic.audioContext.resume().then(() => {
+            if (!gameMusic.isMuted) {
+                gameMusic.start();
+            }
+        });
+    } else {
+        gameMusic.start();
+    }
+
+    musicInitialized = true;
+
+    // Remove all listeners
     document.removeEventListener('click', startMusicOnInteraction);
     document.removeEventListener('keydown', startMusicOnInteraction);
     document.removeEventListener('touchstart', startMusicOnInteraction);
+    document.removeEventListener('touchend', startMusicOnInteraction);
 }
 
+// Use multiple events to catch first interaction on any device
 document.addEventListener('click', startMusicOnInteraction);
 document.addEventListener('keydown', startMusicOnInteraction);
 document.addEventListener('touchstart', startMusicOnInteraction);
+document.addEventListener('touchend', startMusicOnInteraction);
 
 // Allow Enter key to submit answer
 numeratorInput.addEventListener('keydown', (e) => {

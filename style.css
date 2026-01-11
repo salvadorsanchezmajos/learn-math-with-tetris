@@ -130,7 +130,7 @@ body {
     border: 3px solid #00d4ff;
     border-radius: 5px;
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-    max-height: 60vh;
+    max-height: 70vh;
     width: auto;
     height: auto;
 }
@@ -184,96 +184,29 @@ body {
     display: none !important;
 }
 
-.control-mode-selector {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.control-mode-selector span {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
-}
-
-.mode-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
-    border: 2px solid rgba(0, 212, 255, 0.3);
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.mode-btn:hover {
-    border-color: rgba(0, 212, 255, 0.6);
-    color: #fff;
-}
-
-.mode-btn.active {
-    background: linear-gradient(135deg, #00d4ff, #0088cc);
-    border-color: #00d4ff;
-    color: #fff;
-}
-
-.controls-info {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.controls-info strong {
-    color: #00d4ff;
-}
-
 .touch-controls {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
     margin-top: 5px;
-}
-
-/* Reduce canvas when touch controls are visible */
-body.touch-mode #gameCanvas {
-    max-height: 45vh;
-}
-
-body.touch-mode .game-area {
-    gap: 10px;
-}
-
-body.touch-mode .info-box {
-    padding: 6px 10px;
-}
-
-body.touch-mode .info-box h3 {
-    font-size: 0.65rem;
-    margin-bottom: 3px;
-}
-
-body.touch-mode .info-box p {
-    font-size: 1rem;
 }
 
 .control-row {
     display: flex;
     justify-content: center;
-    gap: 10px;
+    gap: 6px;
 }
 
 .control-btn {
     background: linear-gradient(135deg, #00d4ff, #0088cc);
     color: #fff;
     border: none;
-    padding: 18px 28px;
-    font-size: 1.1rem;
+    padding: 11px 17px;
+    font-size: 0.7rem;
     font-weight: bold;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    min-width: 90px;
+    min-width: 54px;
     touch-action: manipulation;
     user-select: none;
     transition: transform 0.1s, background 0.1s;
@@ -285,9 +218,9 @@ body.touch-mode .info-box p {
 }
 
 .direction-btn {
-    font-size: 1.5rem;
-    padding: 18px 24px;
-    min-width: 70px;
+    font-size: 0.9rem;
+    padding: 11px 14px;
+    min-width: 42px;
 }
 
 .pause-btn {
@@ -299,7 +232,7 @@ body.touch-mode .info-box p {
 }
 
 .wide-btn {
-    min-width: 200px;
+    min-width: 120px;
 }
 
 /* Question Modal */
@@ -404,20 +337,12 @@ body.touch-mode .info-box p {
 /* Large desktop */
 @media (min-height: 800px) {
     #gameCanvas {
-        max-height: 70vh;
-    }
-
-    body.touch-mode #gameCanvas {
-        max-height: 55vh;
+        max-height: 75vh;
     }
 }
 
 /* Tablet responsive */
 @media (max-width: 900px) {
-    .control-mode-selector {
-        flex-wrap: wrap;
-    }
-
     .header h1 {
         font-size: 1.6rem;
     }
@@ -455,17 +380,13 @@ body.touch-mode .info-box p {
     }
 
     #gameCanvas {
-        max-height: 55vh;
-    }
-
-    body.touch-mode #gameCanvas {
-        max-height: 40vh;
+        max-height: 60vh;
     }
 
     .control-btn {
-        padding: 14px 20px;
-        font-size: 1rem;
-        min-width: 80px;
+        padding: 10px 15px;
+        font-size: 0.65rem;
+        min-width: 50px;
     }
 }
 
@@ -512,47 +433,26 @@ body.touch-mode .info-box p {
     }
 
     .info-box {
-        padding: 6px 10px;
-        min-width: 60px;
+        padding: 4px 8px;
+        min-width: 55px;
     }
 
     .info-box h3 {
-        font-size: 0.6rem;
-        margin-bottom: 3px;
+        font-size: 0.55rem;
+        margin-bottom: 2px;
     }
 
     .info-box p {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
     }
 
     #gameCanvas {
-        max-height: 45vh;
-    }
-
-    body.touch-mode #gameCanvas {
-        max-height: 32vh;
+        max-height: 55vh;
     }
 
     #nextPieceCanvas {
-        width: 70px;
-        height: 70px;
-    }
-
-    .control-mode-selector {
-        gap: 6px;
-    }
-
-    .control-mode-selector span {
-        font-size: 0.8rem;
-    }
-
-    .mode-btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-    }
-
-    .controls-info {
-        font-size: 0.75rem;
+        width: 60px;
+        height: 60px;
     }
 
     .question-text {
@@ -568,43 +468,27 @@ body.touch-mode .info-box p {
     }
 
     .control-btn {
-        padding: 12px 18px;
-        font-size: 0.95rem;
-        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 0.6rem;
+        min-width: 45px;
     }
 
     .direction-btn {
-        font-size: 1.2rem;
-        min-width: 55px;
-        padding: 12px 16px;
+        font-size: 0.8rem;
+        min-width: 38px;
+        padding: 8px 10px;
     }
 
     .wide-btn {
-        min-width: 150px;
+        min-width: 90px;
     }
 
     .touch-controls {
-        gap: 6px;
-    }
-
-    .control-row {
-        gap: 6px;
-    }
-
-    body.touch-mode .side-panel {
         gap: 4px;
     }
 
-    body.touch-mode .info-box {
-        padding: 4px 8px;
-    }
-
-    body.touch-mode .info-box h3 {
-        font-size: 0.55rem;
-    }
-
-    body.touch-mode .info-box p {
-        font-size: 0.85rem;
+    .control-row {
+        gap: 5px;
     }
 }
 
@@ -615,22 +499,22 @@ body.touch-mode .info-box p {
     }
 
     #gameCanvas {
-        max-height: 40vh;
+        max-height: 50vh;
     }
 
     .control-btn {
-        padding: 10px 14px;
-        font-size: 0.85rem;
-        min-width: 60px;
+        padding: 6px 10px;
+        font-size: 0.55rem;
+        min-width: 40px;
     }
 
     .direction-btn {
-        font-size: 1.1rem;
-        min-width: 50px;
+        font-size: 0.7rem;
+        min-width: 35px;
     }
 
     .wide-btn {
-        min-width: 130px;
+        min-width: 80px;
     }
 }
 
@@ -653,7 +537,7 @@ body.touch-mode .info-box p {
     }
 
     #gameCanvas {
-        max-height: 65vh;
+        max-height: 60vh;
     }
 
     .side-panel {
@@ -673,35 +557,26 @@ body.touch-mode .info-box p {
         font-size: 0.85rem;
     }
 
-    .control-mode-selector {
-        gap: 5px;
-    }
-
-    .mode-btn {
-        padding: 4px 10px;
-        font-size: 0.75rem;
-    }
-
     .touch-controls {
-        gap: 5px;
+        gap: 3px;
     }
 
     .control-row {
-        gap: 5px;
+        gap: 4px;
     }
 
     .control-btn {
-        padding: 8px 14px;
-        font-size: 0.85rem;
-        min-width: 55px;
+        padding: 6px 10px;
+        font-size: 0.55rem;
+        min-width: 40px;
     }
 
     .direction-btn {
-        padding: 8px 12px;
-        min-width: 45px;
+        padding: 6px 8px;
+        min-width: 35px;
     }
 
     .wide-btn {
-        min-width: 110px;
+        min-width: 80px;
     }
 }

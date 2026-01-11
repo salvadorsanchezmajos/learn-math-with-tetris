@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Learn Math with Tetris</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
     <div class="game-container">
@@ -32,7 +32,7 @@
                 <div id="pauseOverlay" class="overlay hidden">
                     <div class="overlay-content">
                         <h2>PAUSED</h2>
-                        <p>Press P to resume</p>
+                        <p>Tap Pause to resume</p>
                     </div>
                 </div>
                 <div id="gameOverOverlay" class="overlay hidden">
@@ -64,17 +64,7 @@
             </div>
         </div>
 
-        <div class="control-mode-selector">
-            <span>Controls:</span>
-            <button id="keyboardModeBtn" class="mode-btn active">Keyboard</button>
-            <button id="touchModeBtn" class="mode-btn">Touch Screen</button>
-        </div>
-
-        <div class="controls-info" id="keyboardInfo">
-            <p><strong>Controls:</strong> Arrow Keys to move | Up to rotate | Space to drop | P to pause</p>
-        </div>
-
-        <div class="touch-controls hidden" id="touchControls">
+        <div class="touch-controls" id="touchControls">
             <div class="control-row">
                 <button id="rotateBtn" class="control-btn">Rotate</button>
                 <button id="pauseBtn" class="control-btn pause-btn">Pause</button>
@@ -106,6 +96,6 @@
         </div>
     </div>
 
-    <script src="game.js?v=3"></script>
+    <script src="game.js?v=4"></script>
 </body>
 </html>

@@ -64,12 +64,6 @@ const denominatorInput = document.getElementById('denominatorInput');
 const attemptsText = document.getElementById('attemptsText');
 const submitAnswer = document.getElementById('submitAnswer');
 
-// Control mode elements
-const keyboardModeBtn = document.getElementById('keyboardModeBtn');
-const touchModeBtn = document.getElementById('touchModeBtn');
-const keyboardInfo = document.getElementById('keyboardInfo');
-const touchControls = document.getElementById('touchControls');
-
 // Touch controls
 const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
@@ -77,9 +71,6 @@ const downBtn = document.getElementById('downBtn');
 const rotateBtn = document.getElementById('rotateBtn');
 const dropBtn = document.getElementById('dropBtn');
 const pauseBtn = document.getElementById('pauseBtn');
-
-// Control mode state
-let controlMode = 'keyboard';
 
 // Sound elements
 const soundToggle = document.getElementById('soundToggle');
@@ -995,38 +986,6 @@ denominatorInput.addEventListener('keydown', (e) => {
     }
 });
 
-// Control mode switching
-function setControlMode(mode) {
-    controlMode = mode;
-
-    if (mode === 'keyboard') {
-        keyboardModeBtn.classList.add('active');
-        touchModeBtn.classList.remove('active');
-        keyboardInfo.classList.remove('hidden');
-        touchControls.classList.add('hidden');
-        document.body.classList.remove('touch-mode');
-    } else {
-        keyboardModeBtn.classList.remove('active');
-        touchModeBtn.classList.add('active');
-        keyboardInfo.classList.add('hidden');
-        touchControls.classList.remove('hidden');
-        document.body.classList.add('touch-mode');
-    }
-}
-
-// Auto-detect touch device and set appropriate mode
-function detectTouchDevice() {
-    const isTouchDevice = ('ontouchstart' in window) ||
-                          (navigator.maxTouchPoints > 0) ||
-                          (navigator.msMaxTouchPoints > 0);
-    if (isTouchDevice) {
-        setControlMode('touch');
-    }
-}
-
-keyboardModeBtn.addEventListener('click', () => setControlMode('keyboard'));
-touchModeBtn.addEventListener('click', () => setControlMode('touch'));
-
 // Touch controls with improved handling
 function setupTouchButton(button, action) {
     let intervalId = null;
@@ -1071,7 +1030,6 @@ initBoard();
 currentPiece = Tetromino.random();
 nextPiece = Tetromino.random();
 currentPosition = { row: 0, col: Math.floor(BOARD_WIDTH / 2) - 1 };
-detectTouchDevice();
 updateDisplay();
 drawNextPiece();
 draw();

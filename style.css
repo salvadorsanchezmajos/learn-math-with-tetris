@@ -4,21 +4,27 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    padding: 10px;
 }
 
 .game-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
+    max-height: 100vh;
+    max-width: 100vw;
 }
 
 .header h1 {
@@ -30,36 +36,38 @@ body {
 
 .game-area {
     display: flex;
-    gap: 20px;
+    gap: 15px;
     align-items: flex-start;
+    flex: 1;
+    min-height: 0;
 }
 
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    min-width: 100px;
+    gap: 10px;
+    min-width: 90px;
 }
 
 .info-box {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 8px;
+    padding: 10px;
     text-align: center;
     border: 2px solid rgba(0, 212, 255, 0.3);
 }
 
 .info-box h3 {
     color: #00d4ff;
-    font-size: 0.9rem;
-    margin-bottom: 8px;
+    font-size: 0.75rem;
+    margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .info-box p {
     color: #fff;
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     font-weight: bold;
 }
 
@@ -74,6 +82,10 @@ body {
 
 .board-container {
     position: relative;
+    flex-shrink: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #gameCanvas {
@@ -81,6 +93,9 @@ body {
     border: 3px solid #00d4ff;
     border-radius: 5px;
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    max-height: 60vh;
+    width: auto;
+    height: auto;
 }
 
 .overlay {
@@ -327,28 +342,94 @@ body {
     box-shadow: 0 0 20px rgba(102, 187, 106, 0.5);
 }
 
+/* Large desktop */
+@media (min-height: 800px) {
+    #gameCanvas {
+        max-height: 70vh;
+    }
+}
+
 /* Tablet responsive */
 @media (max-width: 900px) {
     .control-mode-selector {
         flex-wrap: wrap;
     }
+
+    .header h1 {
+        font-size: 1.6rem;
+    }
+}
+
+/* Tablet portrait and small laptops */
+@media (max-width: 768px) {
+    body {
+        padding: 8px;
+    }
+
+    .game-container {
+        gap: 8px;
+    }
+
+    .game-area {
+        gap: 10px;
+    }
+
+    .side-panel {
+        min-width: 80px;
+        gap: 8px;
+    }
+
+    .info-box {
+        padding: 8px;
+    }
+
+    .info-box h3 {
+        font-size: 0.65rem;
+    }
+
+    .info-box p {
+        font-size: 1rem;
+    }
+
+    #gameCanvas {
+        max-height: 55vh;
+    }
+
+    .control-btn {
+        padding: 14px 20px;
+        font-size: 1rem;
+        min-width: 80px;
+    }
 }
 
 /* Mobile responsive */
 @media (max-width: 600px) {
+    body {
+        padding: 5px;
+        align-items: flex-start;
+        padding-top: 10px;
+    }
+
     .header h1 {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
+    }
+
+    .game-container {
+        gap: 6px;
     }
 
     .game-area {
         flex-direction: column;
         align-items: center;
+        gap: 8px;
     }
 
     .side-panel {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
+        min-width: unset;
+        gap: 6px;
     }
 
     .left-panel {
@@ -364,31 +445,176 @@ body {
     }
 
     .info-box {
-        padding: 10px;
-        min-width: 70px;
+        padding: 6px 10px;
+        min-width: 60px;
+    }
+
+    .info-box h3 {
+        font-size: 0.6rem;
+        margin-bottom: 3px;
+    }
+
+    .info-box p {
+        font-size: 0.95rem;
     }
 
     #gameCanvas {
-        width: 250px;
-        height: 500px;
+        max-height: 45vh;
+    }
+
+    #nextPieceCanvas {
+        width: 70px;
+        height: 70px;
+    }
+
+    .control-mode-selector {
+        gap: 6px;
+    }
+
+    .control-mode-selector span {
+        font-size: 0.8rem;
+    }
+
+    .mode-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .controls-info {
+        font-size: 0.75rem;
     }
 
     .question-text {
+        font-size: 1.3rem;
+    }
+
+    .modal-content {
+        padding: 25px;
+    }
+
+    .modal-content h2 {
         font-size: 1.4rem;
     }
 
     .control-btn {
-        padding: 15px 22px;
-        font-size: 1rem;
-        min-width: 75px;
+        padding: 12px 18px;
+        font-size: 0.95rem;
+        min-width: 70px;
     }
 
     .direction-btn {
-        font-size: 1.3rem;
-        min-width: 60px;
+        font-size: 1.2rem;
+        min-width: 55px;
+        padding: 12px 16px;
     }
 
     .wide-btn {
-        min-width: 170px;
+        min-width: 150px;
+    }
+
+    .touch-controls {
+        gap: 8px;
+    }
+
+    .control-row {
+        gap: 8px;
+    }
+}
+
+/* Small mobile phones */
+@media (max-width: 380px) {
+    .header h1 {
+        font-size: 1.1rem;
+    }
+
+    #gameCanvas {
+        max-height: 40vh;
+    }
+
+    .control-btn {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        min-width: 60px;
+    }
+
+    .direction-btn {
+        font-size: 1.1rem;
+        min-width: 50px;
+    }
+
+    .wide-btn {
+        min-width: 130px;
+    }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) {
+    body {
+        padding: 5px;
+    }
+
+    .header h1 {
+        font-size: 1rem;
+    }
+
+    .game-container {
+        gap: 5px;
+    }
+
+    .game-area {
+        gap: 10px;
+    }
+
+    #gameCanvas {
+        max-height: 65vh;
+    }
+
+    .side-panel {
+        gap: 5px;
+    }
+
+    .info-box {
+        padding: 4px 8px;
+    }
+
+    .info-box h3 {
+        font-size: 0.55rem;
+        margin-bottom: 2px;
+    }
+
+    .info-box p {
+        font-size: 0.85rem;
+    }
+
+    .control-mode-selector {
+        gap: 5px;
+    }
+
+    .mode-btn {
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+
+    .touch-controls {
+        gap: 5px;
+    }
+
+    .control-row {
+        gap: 5px;
+    }
+
+    .control-btn {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        min-width: 55px;
+    }
+
+    .direction-btn {
+        padding: 8px 12px;
+        min-width: 45px;
+    }
+
+    .wide-btn {
+        min-width: 110px;
     }
 }

@@ -132,6 +132,41 @@ body {
     display: none !important;
 }
 
+.control-mode-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.control-mode-selector span {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+
+.mode-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border: 2px solid rgba(0, 212, 255, 0.3);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+    border-color: rgba(0, 212, 255, 0.6);
+    color: #fff;
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, #00d4ff, #0088cc);
+    border-color: #00d4ff;
+    color: #fff;
+}
+
 .controls-info {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;
@@ -142,8 +177,8 @@ body {
     color: #00d4ff;
 }
 
-.mobile-controls {
-    display: none;
+.touch-controls {
+    display: flex;
     flex-direction: column;
     gap: 10px;
     margin-top: 10px;
@@ -159,22 +194,38 @@ body {
     background: linear-gradient(135deg, #00d4ff, #0088cc);
     color: #fff;
     border: none;
-    padding: 15px 25px;
-    font-size: 1rem;
-    border-radius: 10px;
+    padding: 18px 28px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 12px;
     cursor: pointer;
-    min-width: 80px;
+    min-width: 90px;
     touch-action: manipulation;
     user-select: none;
+    transition: transform 0.1s, background 0.1s;
 }
 
 .control-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
     background: linear-gradient(135deg, #0088cc, #006699);
 }
 
+.direction-btn {
+    font-size: 1.5rem;
+    padding: 18px 24px;
+    min-width: 70px;
+}
+
+.pause-btn {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+}
+
+.pause-btn:active {
+    background: linear-gradient(135deg, #f57c00, #e65100);
+}
+
 .wide-btn {
-    min-width: 170px;
+    min-width: 200px;
 }
 
 /* Question Modal */
@@ -276,6 +327,13 @@ body {
     box-shadow: 0 0 20px rgba(102, 187, 106, 0.5);
 }
 
+/* Tablet responsive */
+@media (max-width: 900px) {
+    .control-mode-selector {
+        flex-wrap: wrap;
+    }
+}
+
 /* Mobile responsive */
 @media (max-width: 600px) {
     .header h1 {
@@ -310,14 +368,6 @@ body {
         min-width: 70px;
     }
 
-    .controls-info {
-        display: none;
-    }
-
-    .mobile-controls {
-        display: flex;
-    }
-
     #gameCanvas {
         width: 250px;
         height: 500px;
@@ -325,5 +375,20 @@ body {
 
     .question-text {
         font-size: 1.4rem;
+    }
+
+    .control-btn {
+        padding: 15px 22px;
+        font-size: 1rem;
+        min-width: 75px;
+    }
+
+    .direction-btn {
+        font-size: 1.3rem;
+        min-width: 60px;
+    }
+
+    .wide-btn {
+        min-width: 170px;
     }
 }

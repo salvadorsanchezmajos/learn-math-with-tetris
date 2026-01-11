@@ -57,18 +57,25 @@
             </div>
         </div>
 
-        <div class="controls-info">
+        <div class="control-mode-selector">
+            <span>Controls:</span>
+            <button id="keyboardModeBtn" class="mode-btn active">Keyboard</button>
+            <button id="touchModeBtn" class="mode-btn">Touch Screen</button>
+        </div>
+
+        <div class="controls-info" id="keyboardInfo">
             <p><strong>Controls:</strong> Arrow Keys to move | Up to rotate | Space to drop | P to pause</p>
         </div>
 
-        <div class="mobile-controls">
+        <div class="touch-controls hidden" id="touchControls">
             <div class="control-row">
                 <button id="rotateBtn" class="control-btn">Rotate</button>
+                <button id="pauseBtn" class="control-btn pause-btn">Pause</button>
             </div>
             <div class="control-row">
-                <button id="leftBtn" class="control-btn">Left</button>
-                <button id="downBtn" class="control-btn">Down</button>
-                <button id="rightBtn" class="control-btn">Right</button>
+                <button id="leftBtn" class="control-btn direction-btn">&#9664;</button>
+                <button id="downBtn" class="control-btn direction-btn">&#9660;</button>
+                <button id="rightBtn" class="control-btn direction-btn">&#9654;</button>
             </div>
             <div class="control-row">
                 <button id="dropBtn" class="control-btn wide-btn">Drop</button>

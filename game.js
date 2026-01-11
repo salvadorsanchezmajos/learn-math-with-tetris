@@ -81,6 +81,197 @@ const pauseBtn = document.getElementById('pauseBtn');
 // Control mode state
 let controlMode = 'keyboard';
 
+// Sound elements
+const soundToggle = document.getElementById('soundToggle');
+const soundOn = document.getElementById('soundOn');
+const soundOff = document.getElementById('soundOff');
+
+// Music system using Web Audio API
+class GameMusic {
+    constructor() {
+        this.audioContext = null;
+        this.isPlaying = false;
+        this.isMuted = false;
+        this.currentNote = 0;
+        this.tempo = 140; // BPM
+        this.nextNoteTime = 0;
+        this.scheduleAheadTime = 0.1;
+        this.timerID = null;
+        this.masterGain = null;
+
+        // Melody notes (frequencies in Hz) - A catchy retro game tune
+        // Using a pentatonic scale for a pleasant sound
+        this.melody = [
+            // Bar 1
+            { note: 659, duration: 0.5 },  // E5
+            { note: 494, duration: 0.25 }, // B4
+            { note: 523, duration: 0.25 }, // C5
+            { note: 587, duration: 0.5 },  // D5
+            { note: 523, duration: 0.25 }, // C5
+            { note: 494, duration: 0.25 }, // B4
+            // Bar 2
+            { note: 440, duration: 0.5 },  // A4
+            { note: 440, duration: 0.25 }, // A4
+            { note: 523, duration: 0.25 }, // C5
+            { note: 659, duration: 0.5 },  // E5
+            { note: 587, duration: 0.25 }, // D5
+            { note: 523, duration: 0.25 }, // C5
+            // Bar 3
+            { note: 494, duration: 0.75 }, // B4
+            { note: 523, duration: 0.25 }, // C5
+            { note: 587, duration: 0.5 },  // D5
+            { note: 659, duration: 0.5 },  // E5
+            // Bar 4
+            { note: 523, duration: 0.5 },  // C5
+            { note: 440, duration: 0.5 },  // A4
+            { note: 440, duration: 0.5 },  // A4
+            { note: 0, duration: 0.5 },    // Rest
+            // Bar 5
+            { note: 587, duration: 0.75 }, // D5
+            { note: 698, duration: 0.25 }, // F5
+            { note: 880, duration: 0.5 },  // A5
+            { note: 784, duration: 0.25 }, // G5
+            { note: 698, duration: 0.25 }, // F5
+            // Bar 6
+            { note: 659, duration: 0.75 }, // E5
+            { note: 523, duration: 0.25 }, // C5
+            { note: 659, duration: 0.5 },  // E5
+            { note: 587, duration: 0.25 }, // D5
+            { note: 523, duration: 0.25 }, // C5
+            // Bar 7
+            { note: 494, duration: 0.5 },  // B4
+            { note: 494, duration: 0.25 }, // B4
+            { note: 523, duration: 0.25 }, // C5
+            { note: 587, duration: 0.5 },  // D5
+            { note: 659, duration: 0.5 },  // E5
+            // Bar 8
+            { note: 523, duration: 0.5 },  // C5
+            { note: 440, duration: 0.5 },  // A4
+            { note: 440, duration: 0.5 },  // A4
+            { note: 0, duration: 0.5 },    // Rest
+        ];
+
+        // Bass line
+        this.bassLine = [
+            { note: 165, duration: 1 },    // E3
+            { note: 165, duration: 1 },    // E3
+            { note: 110, duration: 1 },    // A2
+            { note: 110, duration: 1 },    // A2
+            { note: 147, duration: 1 },    // D3
+            { note: 147, duration: 1 },    // D3
+            { note: 165, duration: 1 },    // E3
+            { note: 165, duration: 1 },    // E3
+            { note: 147, duration: 1 },    // D3
+            { note: 147, duration: 1 },    // D3
+            { note: 131, duration: 1 },    // C3
+            { note: 131, duration: 1 },    // C3
+            { note: 123, duration: 1 },    // B2
+            { note: 165, duration: 1 },    // E3
+            { note: 110, duration: 1 },    // A2
+            { note: 110, duration: 1 },    // A2
+        ];
+    }
+
+    init() {
+        if (this.audioContext) return;
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.audioContext.createGain();
+        this.masterGain.connect(this.audioContext.destination);
+        this.masterGain.gain.value = 0.3;
+    }
+
+    playNote(frequency, startTime, duration, type = 'square', gainValue = 0.3) {
+        if (!this.audioContext || frequency === 0) return;
+
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+
+        gainNode.gain.setValueAtTime(gainValue, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration * 0.9);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.masterGain);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+    }
+
+    scheduler() {
+        const secondsPerBeat = 60.0 / this.tempo;
+
+        while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
+            // Play melody
+            const melodyNote = this.melody[this.currentNote % this.melody.length];
+            const noteDuration = melodyNote.duration * secondsPerBeat;
+            this.playNote(melodyNote.note, this.nextNoteTime, noteDuration, 'square', 0.2);
+
+            // Play bass (every beat)
+            const bassIndex = Math.floor(this.currentNote / 2) % this.bassLine.length;
+            if (this.currentNote % 2 === 0) {
+                const bassNote = this.bassLine[bassIndex];
+                this.playNote(bassNote.note, this.nextNoteTime, secondsPerBeat * 0.8, 'triangle', 0.25);
+            }
+
+            this.nextNoteTime += noteDuration;
+            this.currentNote++;
+        }
+
+        this.timerID = setTimeout(() => this.scheduler(), 25);
+    }
+
+    start() {
+        if (this.isPlaying || this.isMuted) return;
+
+        this.init();
+
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        this.isPlaying = true;
+        this.currentNote = 0;
+        this.nextNoteTime = this.audioContext.currentTime;
+        this.scheduler();
+    }
+
+    stop() {
+        this.isPlaying = false;
+        if (this.timerID) {
+            clearTimeout(this.timerID);
+            this.timerID = null;
+        }
+    }
+
+    toggle() {
+        this.isMuted = !this.isMuted;
+
+        if (this.isMuted) {
+            this.stop();
+        } else {
+            this.start();
+        }
+
+        return this.isMuted;
+    }
+
+    pause() {
+        if (this.isPlaying) {
+            this.stop();
+        }
+    }
+
+    resume() {
+        if (!this.isMuted && !this.isPlaying) {
+            this.start();
+        }
+    }
+}
+
+const gameMusic = new GameMusic();
+
 // Tetromino class
 class Tetromino {
     constructor(type) {
@@ -448,6 +639,12 @@ function togglePause() {
     if (isGameOver || showQuestion) return;
     isPaused = !isPaused;
     pauseOverlay.classList.toggle('hidden', !isPaused);
+
+    if (isPaused) {
+        gameMusic.pause();
+    } else {
+        gameMusic.resume();
+    }
 }
 
 function gameOver() {
@@ -455,6 +652,7 @@ function gameOver() {
     clearInterval(gameLoop);
     finalScore.textContent = score;
     gameOverOverlay.classList.remove('hidden');
+    gameMusic.pause();
 }
 
 function showQuestionModal() {
@@ -467,6 +665,7 @@ function showQuestionModal() {
     denominatorInput.value = '';
     questionModal.classList.remove('hidden');
     numeratorInput.focus();
+    gameMusic.pause();
 }
 
 function hideQuestionModal() {
@@ -474,6 +673,7 @@ function hideQuestionModal() {
     isPaused = false;
     currentQuestion = null;
     questionModal.classList.add('hidden');
+    gameMusic.resume();
 }
 
 function submitAnswerHandler() {
@@ -526,6 +726,7 @@ function restartGame() {
 
     updateDisplay();
     drawNextPiece();
+    gameMusic.resume();
     startGameLoop();
 }
 
@@ -715,6 +916,26 @@ document.addEventListener('keydown', (e) => {
 
 restartButton.addEventListener('click', restartGame);
 submitAnswer.addEventListener('click', submitAnswerHandler);
+
+// Sound toggle
+soundToggle.addEventListener('click', () => {
+    const isMuted = gameMusic.toggle();
+    soundToggle.setAttribute('data-muted', isMuted);
+    soundOn.classList.toggle('hidden', isMuted);
+    soundOff.classList.toggle('hidden', !isMuted);
+});
+
+// Start music on first user interaction (required by browsers)
+function startMusicOnInteraction() {
+    gameMusic.start();
+    document.removeEventListener('click', startMusicOnInteraction);
+    document.removeEventListener('keydown', startMusicOnInteraction);
+    document.removeEventListener('touchstart', startMusicOnInteraction);
+}
+
+document.addEventListener('click', startMusicOnInteraction);
+document.addEventListener('keydown', startMusicOnInteraction);
+document.addEventListener('touchstart', startMusicOnInteraction);
 
 // Allow Enter key to submit answer
 numeratorInput.addEventListener('keydown', (e) => {

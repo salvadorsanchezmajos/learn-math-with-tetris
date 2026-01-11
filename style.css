@@ -195,8 +195,30 @@ body {
 .touch-controls {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+/* Reduce canvas when touch controls are visible */
+body.touch-mode #gameCanvas {
+    max-height: 45vh;
+}
+
+body.touch-mode .game-area {
     gap: 10px;
-    margin-top: 10px;
+}
+
+body.touch-mode .info-box {
+    padding: 6px 10px;
+}
+
+body.touch-mode .info-box h3 {
+    font-size: 0.65rem;
+    margin-bottom: 3px;
+}
+
+body.touch-mode .info-box p {
+    font-size: 1rem;
 }
 
 .control-row {
@@ -347,6 +369,10 @@ body {
     #gameCanvas {
         max-height: 70vh;
     }
+
+    body.touch-mode #gameCanvas {
+        max-height: 55vh;
+    }
 }
 
 /* Tablet responsive */
@@ -393,6 +419,10 @@ body {
 
     #gameCanvas {
         max-height: 55vh;
+    }
+
+    body.touch-mode #gameCanvas {
+        max-height: 40vh;
     }
 
     .control-btn {
@@ -462,6 +492,10 @@ body {
         max-height: 45vh;
     }
 
+    body.touch-mode #gameCanvas {
+        max-height: 32vh;
+    }
+
     #nextPieceCanvas {
         width: 70px;
         height: 70px;
@@ -513,11 +547,27 @@ body {
     }
 
     .touch-controls {
-        gap: 8px;
+        gap: 6px;
     }
 
     .control-row {
-        gap: 8px;
+        gap: 6px;
+    }
+
+    body.touch-mode .side-panel {
+        gap: 4px;
+    }
+
+    body.touch-mode .info-box {
+        padding: 4px 8px;
+    }
+
+    body.touch-mode .info-box h3 {
+        font-size: 0.55rem;
+    }
+
+    body.touch-mode .info-box p {
+        font-size: 0.85rem;
     }
 }
 

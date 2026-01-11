@@ -742,11 +742,13 @@ function setControlMode(mode) {
         touchModeBtn.classList.remove('active');
         keyboardInfo.classList.remove('hidden');
         touchControls.classList.add('hidden');
+        document.body.classList.remove('touch-mode');
     } else {
         keyboardModeBtn.classList.remove('active');
         touchModeBtn.classList.add('active');
         keyboardInfo.classList.add('hidden');
         touchControls.classList.remove('hidden');
+        document.body.classList.add('touch-mode');
     }
 }
 

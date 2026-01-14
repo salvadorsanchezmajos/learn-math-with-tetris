@@ -10,16 +10,34 @@
     <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
-    <div class="game-container">
-        <div class="header">
-            <h1>Learn Math with Tetris</h1>
-            <button id="soundToggle" class="sound-btn" title="Toggle Music">
-                <span id="soundOn">&#9835; Music ON</span>
-                <span id="soundOff" class="hidden">&#9835; Music OFF</span>
+    <!-- Game Selection Menu -->
+    <div id="gameMenu" class="menu-container">
+        <h1 class="menu-title">Learn Math with Games!</h1>
+        <div class="menu-buttons">
+            <button id="playTetris" class="menu-btn tetris-btn">
+                <span class="btn-icon">🎮</span>
+                <span class="btn-text">Play Tetris</span>
+            </button>
+            <button id="playPacman" class="menu-btn pacman-btn">
+                <span class="btn-icon">👻</span>
+                <span class="btn-text">Play Pac-Man</span>
             </button>
         </div>
+    </div>
 
-        <div class="game-area">
+    <div class="game-container hidden" id="gameContainer">
+        <div class="header">
+            <div class="header-row">
+                <button id="backToMenu" class="back-btn">← Menu</button>
+                <h1 id="gameTitle">Learn Math with Tetris</h1>
+                <button id="soundToggle" class="sound-btn" title="Toggle Music">
+                    <span id="soundOn">&#9835; Music ON</span>
+                    <span id="soundOff" class="hidden">&#9835; Music OFF</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="game-area" id="tetrisGame">
             <div class="side-panel left-panel">
                 <div class="info-box">
                     <h3>Next</h3>
@@ -64,7 +82,50 @@
             </div>
         </div>
 
-        <div class="touch-controls" id="touchControls">
+        <!-- Pac-Man Game Area -->
+        <div class="game-area hidden" id="pacmanGame">
+            <div class="side-panel left-panel">
+                <div class="info-box">
+                    <h3>Lives</h3>
+                    <p id="livesDisplay">3</p>
+                </div>
+            </div>
+
+            <div class="board-container">
+                <canvas id="pacmanCanvas" width="560" height="620"></canvas>
+                <div id="pacmanPauseOverlay" class="overlay hidden">
+                    <div class="overlay-content">
+                        <h2>PAUSED</h2>
+                        <p>Tap Pause to resume</p>
+                    </div>
+                </div>
+                <div id="pacmanGameOverOverlay" class="overlay hidden">
+                    <div class="overlay-content">
+                        <h2>GAME OVER</h2>
+                        <p>Score: <span id="pacmanFinalScore">0</span></p>
+                        <button id="pacmanRestartButton">Play Again</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-panel right-panel">
+                <div class="info-box">
+                    <h3>Score</h3>
+                    <p id="pacmanScoreDisplay">0</p>
+                </div>
+                <div class="info-box">
+                    <h3>Level</h3>
+                    <p id="pacmanLevelDisplay">1</p>
+                </div>
+                <div class="info-box attempts-box">
+                    <h3>Attempts</h3>
+                    <p id="pacmanAttemptsDisplay">3</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tetris Controls -->
+        <div class="touch-controls" id="tetrisControls">
             <div class="control-row">
                 <button id="rotateBtn" class="control-btn">Rotate</button>
                 <button id="pauseBtn" class="control-btn pause-btn">Pause</button>
@@ -76,6 +137,19 @@
             </div>
             <div class="control-row">
                 <button id="dropBtn" class="control-btn wide-btn">Drop</button>
+            </div>
+        </div>
+
+        <!-- Pac-Man Controls -->
+        <div class="touch-controls hidden" id="pacmanControls">
+            <div class="control-row">
+                <button id="pacmanPauseBtn" class="control-btn pause-btn">Pause</button>
+            </div>
+            <div class="control-row">
+                <button id="pacmanLeftBtn" class="control-btn direction-btn">&#9664;</button>
+                <button id="pacmanUpBtn" class="control-btn direction-btn">&#9650;</button>
+                <button id="pacmanDownBtn" class="control-btn direction-btn">&#9660;</button>
+                <button id="pacmanRightBtn" class="control-btn direction-btn">&#9654;</button>
             </div>
         </div>
     </div>

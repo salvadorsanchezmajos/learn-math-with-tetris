@@ -27,7 +27,6 @@ class GameMusic {
         this.scheduleAheadTime = 0.1;
         this.timerID = null;
         this.masterGain = null;
-        this.currentGameType = 'tetris';
 
         // Tetris melody
         this.tetrisMelody = [
@@ -51,18 +50,6 @@ class GameMusic {
             { note: 659, duration: 0.5 }, { note: 523, duration: 0.5 },
             { note: 440, duration: 0.5 }, { note: 440, duration: 0.5 },
             { note: 0, duration: 0.5 }
-        ];
-
-        // Pac-Man siren melody (repeating pattern)
-        this.pacmanMelody = [
-            { note: 494, duration: 0.15 }, { note: 523, duration: 0.15 },
-            { note: 587, duration: 0.15 }, { note: 659, duration: 0.15 },
-            { note: 698, duration: 0.15 }, { note: 784, duration: 0.15 },
-            { note: 880, duration: 0.15 }, { note: 988, duration: 0.15 },
-            { note: 880, duration: 0.15 }, { note: 784, duration: 0.15 },
-            { note: 698, duration: 0.15 }, { note: 659, duration: 0.15 },
-            { note: 587, duration: 0.15 }, { note: 523, duration: 0.15 },
-            { note: 494, duration: 0.15 }, { note: 440, duration: 0.15 }
         ];
 
         this.bassLine = [
@@ -120,20 +107,18 @@ class GameMusic {
 
     scheduler() {
         const secondsPerBeat = 60.0 / this.tempo;
-        const melody = this.currentGameType === 'pacman' ? this.pacmanMelody : this.tetrisMelody;
+        const melody = this.tetrisMelody;
 
         while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
             const melodyNote = melody[this.currentNote % melody.length];
             const noteDuration = melodyNote.duration * secondsPerBeat;
             this.playNote(melodyNote.note, this.nextNoteTime, noteDuration, 'square', 0.2);
 
-            // Only play bass for Tetris
-            if (this.currentGameType === 'tetris') {
-                const bassIndex = Math.floor(this.currentNote / 2) % this.bassLine.length;
-                if (this.currentNote % 2 === 0) {
-                    const bassNote = this.bassLine[bassIndex];
-                    this.playNote(bassNote.note, this.nextNoteTime, secondsPerBeat * 0.8, 'triangle', 0.25);
-                }
+            // Play bass for Tetris
+            const bassIndex = Math.floor(this.currentNote / 2) % this.bassLine.length;
+            if (this.currentNote % 2 === 0) {
+                const bassNote = this.bassLine[bassIndex];
+                this.playNote(bassNote.note, this.nextNoteTime, secondsPerBeat * 0.8, 'triangle', 0.25);
             }
 
             this.nextNoteTime += noteDuration;
@@ -143,29 +128,26 @@ class GameMusic {
         this.timerID = setTimeout(() => this.scheduler(), 25);
     }
 
-    setGameType(gameType) {
-        this.currentGameType = gameType;
-    }
-
     playWakka() {
         if (!this.audioContext || this.isMuted) return;
 
         const now = this.audioContext.currentTime;
+
+        // Create the classic "wakka" sound - a short beep
         const oscillator = this.audioContext.createOscillator();
         const gainNode = this.audioContext.createGain();
 
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(800, now);
-        oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+        oscillator.type = 'square';  // Square wave for classic sound
+        oscillator.frequency.setValueAtTime(200, now);  // Low frequency
 
-        gainNode.gain.setValueAtTime(0.15, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
 
         oscillator.connect(gainNode);
         gainNode.connect(this.masterGain);
 
         oscillator.start(now);
-        oscillator.stop(now + 0.1);
+        oscillator.stop(now + 0.06);
     }
 
     start() {
@@ -1097,6 +1079,7 @@ class PacManGame {
         this.totalDots = 0;
         this.dotsEaten = 0;
         this.lastMathBreak = 0; // Track progress for math breaks
+        this.lastDotEaten = null; // Track last dot eaten to prevent duplicate sounds
 
         this.powerMode = false;
         this.powerModeTimer = 0;
@@ -1319,13 +1302,24 @@ class PacManGame {
         const cellY = Math.round(this.pacman.y);
 
         if (cellX >= 0 && cellX < MAZE_COLS && cellY >= 0 && cellY < MAZE_ROWS) {
+            const dotKey = `${cellX},${cellY}`;
+
             if (this.maze[cellY][cellX] === 1) {
+                // Only play sound if this is a new dot
+                if (this.lastDotEaten !== dotKey) {
+                    gameMusic.playWakka();
+                    this.lastDotEaten = dotKey;
+                }
                 this.maze[cellY][cellX] = 3;
                 this.score += 10;
                 this.dotsEaten++;
-                gameMusic.playWakka();
                 this.checkMathBreak();
             } else if (this.maze[cellY][cellX] === 2) {
+                // Only play sound if this is a new power pellet
+                if (this.lastDotEaten !== dotKey) {
+                    gameMusic.playWakka();
+                    this.lastDotEaten = dotKey;
+                }
                 this.maze[cellY][cellX] = 3;
                 this.score += 50;
                 this.dotsEaten++;
@@ -1822,7 +1816,9 @@ function startGame(gameType) {
         document.getElementById('pacmanGame').classList.add('hidden');
         document.getElementById('pacmanControls').classList.add('hidden');
 
-        gameMusic.setGameType('tetris');
+        if (!gameMusic.isPlaying && !gameMusic.isMuted) {
+            gameMusic.start();
+        }
         if (pacmanGame) pacmanGame.stop();
         if (!tetrisGame) tetrisGame = new TetrisGame();
         tetrisGame.start();
@@ -1833,7 +1829,7 @@ function startGame(gameType) {
         document.getElementById('pacmanGame').classList.remove('hidden');
         document.getElementById('pacmanControls').classList.remove('hidden');
 
-        gameMusic.setGameType('pacman');
+        gameMusic.stop();
         if (tetrisGame) tetrisGame.stop();
         if (!pacmanGame) pacmanGame = new PacManGame();
         pacmanGame.start();

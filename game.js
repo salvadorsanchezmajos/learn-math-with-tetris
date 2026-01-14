@@ -1255,20 +1255,14 @@ class PacManGame {
             if (this.pacman.x < -0.5) this.pacman.x = MAZE_COLS - 0.5;
             if (this.pacman.x >= MAZE_COLS - 0.5) this.pacman.x = -0.5;
         } else {
-            // Hit a wall - clamp position to stay within the valid tile
-            if (dx > 0) {
-                // Moving right - stop at right edge of current tile
-                this.pacman.x = Math.floor(this.pacman.x) + 0.4;
-            } else if (dx < 0) {
-                // Moving left - stop at left edge of current tile
-                this.pacman.x = Math.ceil(this.pacman.x) - 0.4;
+            // Hit a wall - stop at center of current tile to prevent penetration
+            if (dx !== 0) {
+                // Moving horizontally - snap to center of current tile
+                this.pacman.x = Math.round(this.pacman.x);
             }
-            if (dy > 0) {
-                // Moving down - stop at bottom edge of current tile
-                this.pacman.y = Math.floor(this.pacman.y) + 0.4;
-            } else if (dy < 0) {
-                // Moving up - stop at top edge of current tile
-                this.pacman.y = Math.ceil(this.pacman.y) - 0.4;
+            if (dy !== 0) {
+                // Moving vertically - snap to center of current tile
+                this.pacman.y = Math.round(this.pacman.y);
             }
 
             // Check for dots - use round to get the tile we're on
@@ -1399,16 +1393,12 @@ class PacManGame {
                 if (ghost.x < -0.5) ghost.x = MAZE_COLS - 0.5;
                 if (ghost.x >= MAZE_COLS - 0.5) ghost.x = -0.5;
             } else {
-                // Hit a wall - clamp position to stay within the valid tile
-                if (dx > 0) {
-                    ghost.x = Math.floor(ghost.x) + 0.4;
-                } else if (dx < 0) {
-                    ghost.x = Math.ceil(ghost.x) - 0.4;
+                // Hit a wall - stop at center of current tile to prevent penetration
+                if (dx !== 0) {
+                    ghost.x = Math.round(ghost.x);
                 }
-                if (dy > 0) {
-                    ghost.y = Math.floor(ghost.y) + 0.4;
-                } else if (dy < 0) {
-                    ghost.y = Math.ceil(ghost.y) - 0.4;
+                if (dy !== 0) {
+                    ghost.y = Math.round(ghost.y);
                 }
             }
 

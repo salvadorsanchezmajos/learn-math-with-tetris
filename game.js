@@ -1039,7 +1039,7 @@ class PacManGame {
         this.canvas = document.getElementById('pacmanCanvas');
         this.ctx = this.canvas.getContext('2d');
 
-        this.pacman = { x: 14, y: 23, dir: 0, nextDir: 0, mouthOpen: 0 }; // 0=right,1=down,2=left,3=up
+        this.pacman = { x: 14, y: 22, dir: 0, nextDir: 0, mouthOpen: 0 }; // 0=right,1=down,2=left,3=up
         this.ghosts = [];
         this.maze = [];
         this.score = 0;
@@ -1446,8 +1446,8 @@ class PacManGame {
         if (this.lives <= 0) {
             this.gameOver();
         } else {
-            this.pacman.x = 14.5;
-            this.pacman.y = 23.5;
+            this.pacman.x = 14;
+            this.pacman.y = 22;
             this.pacman.dir = 0;
             this.pacman.nextDir = 0;
             this.initGhosts();
@@ -1458,7 +1458,7 @@ class PacManGame {
         this.level++;
         this.initMaze();
         this.pacman.x = 14;
-        this.pacman.y = 23;
+        this.pacman.y = 22;
         this.pacman.dir = 0;
         this.pacman.nextDir = 0;
         this.initGhosts();
@@ -1679,7 +1679,7 @@ class PacManGame {
     restart() {
         this.initMaze();
         this.initGhosts();
-        this.pacman = { x: 14, y: 23, dir: 0, nextDir: 0, mouthOpen: 0 };
+        this.pacman = { x: 14, y: 22, dir: 0, nextDir: 0, mouthOpen: 0 };
         this.score = 0;
         this.level = 1;
         this.lives = 3;
@@ -1727,7 +1727,7 @@ class PacManGame {
         this.initGhosts();
 
         // Reset Pac-Man position - center of tile
-        this.pacman = { x: 14, y: 23, dir: 0, nextDir: 0, mouthOpen: 0 };
+        this.pacman = { x: 14, y: 22, dir: 0, nextDir: 0, mouthOpen: 0 };
         this.score = 0;
         this.level = 1;
         this.lives = 3;

@@ -1256,18 +1256,19 @@ class PacManGame {
             checkY = Math.round(newY);  // Not moving vertically
         }
 
-        // Handle wrap
-        if (checkX < 0) checkX = MAZE_COLS - 1;
-        if (checkX >= MAZE_COLS) checkX = 0;
+        // Handle tunnel wrap for collision check
+        let wrappedCheckX = checkX;
+        if (wrappedCheckX < 0) wrappedCheckX = MAZE_COLS - 1;
+        if (wrappedCheckX >= MAZE_COLS) wrappedCheckX = 0;
 
-        // Only move if not hitting a wall
-        if (checkY >= 0 && checkY < MAZE_ROWS && this.maze[checkY][checkX] !== 0) {
+        // Only move if not hitting a wall (use wrapped coordinates for check)
+        if (checkY >= 0 && checkY < MAZE_ROWS && this.maze[checkY][wrappedCheckX] !== 0) {
             this.pacman.x = newX;
             this.pacman.y = newY;
 
-            // Handle tunnel wrap
-            if (this.pacman.x < -0.5) this.pacman.x = MAZE_COLS - 0.5;
-            if (this.pacman.x >= MAZE_COLS - 0.5) this.pacman.x = -0.5;
+            // Handle tunnel wrap for position
+            if (this.pacman.x < 0) this.pacman.x += MAZE_COLS;
+            if (this.pacman.x >= MAZE_COLS) this.pacman.x -= MAZE_COLS;
         }
         // If hitting a wall, just don't move - stay at current position
 
@@ -1399,18 +1400,19 @@ class PacManGame {
                 checkY = Math.round(newGhostY);
             }
 
-            // Handle wrap
-            if (checkX < 0) checkX = MAZE_COLS - 1;
-            if (checkX >= MAZE_COLS) checkX = 0;
+            // Handle tunnel wrap for collision check
+            let wrappedCheckX = checkX;
+            if (wrappedCheckX < 0) wrappedCheckX = MAZE_COLS - 1;
+            if (wrappedCheckX >= MAZE_COLS) wrappedCheckX = 0;
 
-            // Only move if not hitting a wall
-            if (checkY >= 0 && checkY < MAZE_ROWS && this.maze[checkY][checkX] !== 0) {
+            // Only move if not hitting a wall (use wrapped coordinates for check)
+            if (checkY >= 0 && checkY < MAZE_ROWS && this.maze[checkY][wrappedCheckX] !== 0) {
                 ghost.x = newGhostX;
                 ghost.y = newGhostY;
 
-                // Handle tunnel wrap
-                if (ghost.x < -0.5) ghost.x = MAZE_COLS - 0.5;
-                if (ghost.x >= MAZE_COLS - 0.5) ghost.x = -0.5;
+                // Handle tunnel wrap for position
+                if (ghost.x < 0) ghost.x += MAZE_COLS;
+                if (ghost.x >= MAZE_COLS) ghost.x -= MAZE_COLS;
             }
             // If hitting a wall, just don't move - stay at current position
 

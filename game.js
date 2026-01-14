@@ -1153,14 +1153,14 @@ class PacManGame {
     setupTouchButton(button, action) {
         const startAction = (e) => {
             e.preventDefault();
-            startMusicOnInteraction();
+            initAudioContext();
             action();
         };
 
         button.addEventListener('touchstart', startAction);
         button.addEventListener('click', (e) => {
             if (!e.sourceCapabilities || !e.sourceCapabilities.firesTouchEvents) {
-                startMusicOnInteraction();
+                initAudioContext();
                 action();
             }
         });

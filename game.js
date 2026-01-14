@@ -1533,8 +1533,9 @@ class PacManGame {
         }
 
         // Draw Pac-Man - convert grid position to pixel position
+        const radius = TILE_SIZE / 2 - 1;
         const px = this.pacman.x * TILE_SIZE + TILE_SIZE / 2;
-        const py = this.pacman.y * TILE_SIZE + TILE_SIZE / 2;
+        const py = this.pacman.y * TILE_SIZE + TILE_SIZE / 2 + radius;
 
         // Pac-Man glow
         this.ctx.shadowBlur = 10;

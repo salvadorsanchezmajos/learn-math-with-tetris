@@ -213,6 +213,13 @@ soundToggle.addEventListener('click', () => {
     soundOff.classList.toggle('hidden', !isMuted);
 });
 
+function initAudioContext() {
+    gameMusic.init();
+    if (gameMusic.audioContext && gameMusic.audioContext.state === 'suspended') {
+        gameMusic.audioContext.resume();
+    }
+}
+
 function startMusicOnInteraction() {
     gameMusic.init();
 
@@ -1796,7 +1803,7 @@ playTetrisBtn.addEventListener('click', () => {
 });
 
 playPacmanBtn.addEventListener('click', () => {
-    startMusicOnInteraction();
+    initAudioContext();
     startGame('pacman');
 });
 

@@ -27,9 +27,10 @@ class GameMusic {
         this.scheduleAheadTime = 0.1;
         this.timerID = null;
         this.masterGain = null;
+        this.currentGameType = 'tetris';
 
-        // Melody notes
-        this.melody = [
+        // Tetris melody
+        this.tetrisMelody = [
             { note: 659, duration: 0.5 }, { note: 494, duration: 0.25 },
             { note: 523, duration: 0.25 }, { note: 587, duration: 0.5 },
             { note: 523, duration: 0.25 }, { note: 494, duration: 0.25 },
@@ -50,6 +51,18 @@ class GameMusic {
             { note: 659, duration: 0.5 }, { note: 523, duration: 0.5 },
             { note: 440, duration: 0.5 }, { note: 440, duration: 0.5 },
             { note: 0, duration: 0.5 }
+        ];
+
+        // Pac-Man siren melody (repeating pattern)
+        this.pacmanMelody = [
+            { note: 494, duration: 0.15 }, { note: 523, duration: 0.15 },
+            { note: 587, duration: 0.15 }, { note: 659, duration: 0.15 },
+            { note: 698, duration: 0.15 }, { note: 784, duration: 0.15 },
+            { note: 880, duration: 0.15 }, { note: 988, duration: 0.15 },
+            { note: 880, duration: 0.15 }, { note: 784, duration: 0.15 },
+            { note: 698, duration: 0.15 }, { note: 659, duration: 0.15 },
+            { note: 587, duration: 0.15 }, { note: 523, duration: 0.15 },
+            { note: 494, duration: 0.15 }, { note: 440, duration: 0.15 }
         ];
 
         this.bassLine = [
@@ -107,16 +120,20 @@ class GameMusic {
 
     scheduler() {
         const secondsPerBeat = 60.0 / this.tempo;
+        const melody = this.currentGameType === 'pacman' ? this.pacmanMelody : this.tetrisMelody;
 
         while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
-            const melodyNote = this.melody[this.currentNote % this.melody.length];
+            const melodyNote = melody[this.currentNote % melody.length];
             const noteDuration = melodyNote.duration * secondsPerBeat;
             this.playNote(melodyNote.note, this.nextNoteTime, noteDuration, 'square', 0.2);
 
-            const bassIndex = Math.floor(this.currentNote / 2) % this.bassLine.length;
-            if (this.currentNote % 2 === 0) {
-                const bassNote = this.bassLine[bassIndex];
-                this.playNote(bassNote.note, this.nextNoteTime, secondsPerBeat * 0.8, 'triangle', 0.25);
+            // Only play bass for Tetris
+            if (this.currentGameType === 'tetris') {
+                const bassIndex = Math.floor(this.currentNote / 2) % this.bassLine.length;
+                if (this.currentNote % 2 === 0) {
+                    const bassNote = this.bassLine[bassIndex];
+                    this.playNote(bassNote.note, this.nextNoteTime, secondsPerBeat * 0.8, 'triangle', 0.25);
+                }
             }
 
             this.nextNoteTime += noteDuration;
@@ -124,6 +141,31 @@ class GameMusic {
         }
 
         this.timerID = setTimeout(() => this.scheduler(), 25);
+    }
+
+    setGameType(gameType) {
+        this.currentGameType = gameType;
+    }
+
+    playWakka() {
+        if (!this.audioContext || this.isMuted) return;
+
+        const now = this.audioContext.currentTime;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(800, now);
+        oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.masterGain);
+
+        oscillator.start(now);
+        oscillator.stop(now + 0.1);
     }
 
     start() {
@@ -1281,6 +1323,7 @@ class PacManGame {
                 this.maze[cellY][cellX] = 3;
                 this.score += 10;
                 this.dotsEaten++;
+                gameMusic.playWakka();
                 this.checkMathBreak();
             } else if (this.maze[cellY][cellX] === 2) {
                 this.maze[cellY][cellX] = 3;
@@ -1779,6 +1822,7 @@ function startGame(gameType) {
         document.getElementById('pacmanGame').classList.add('hidden');
         document.getElementById('pacmanControls').classList.add('hidden');
 
+        gameMusic.setGameType('tetris');
         if (pacmanGame) pacmanGame.stop();
         if (!tetrisGame) tetrisGame = new TetrisGame();
         tetrisGame.start();
@@ -1789,6 +1833,7 @@ function startGame(gameType) {
         document.getElementById('pacmanGame').classList.remove('hidden');
         document.getElementById('pacmanControls').classList.remove('hidden');
 
+        gameMusic.setGameType('pacman');
         if (tetrisGame) tetrisGame.stop();
         if (!pacmanGame) pacmanGame = new PacManGame();
         pacmanGame.start();

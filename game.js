@@ -1238,9 +1238,23 @@ class PacManGame {
             newX = Math.round(this.pacman.x);
         }
 
-        // Check the tile we're moving into
-        let checkX = Math.round(newX);
-        let checkY = Math.round(newY);
+        // Check if we're entering a new tile - use floor/ceil based on direction
+        let checkX, checkY;
+        if (dx > 0) {
+            checkX = Math.ceil(newX);  // Check tile to the right
+        } else if (dx < 0) {
+            checkX = Math.floor(newX);  // Check tile to the left
+        } else {
+            checkX = Math.round(newX);  // Not moving horizontally
+        }
+
+        if (dy > 0) {
+            checkY = Math.ceil(newY);  // Check tile below
+        } else if (dy < 0) {
+            checkY = Math.floor(newY);  // Check tile above
+        } else {
+            checkY = Math.round(newY);  // Not moving vertically
+        }
 
         // Handle wrap
         if (checkX < 0) checkX = MAZE_COLS - 1;
@@ -1367,9 +1381,23 @@ class PacManGame {
                 newGhostX = Math.round(ghost.x);
             }
 
-            // Check the tile we're moving into
-            let checkX = Math.round(newGhostX);
-            let checkY = Math.round(newGhostY);
+            // Check if we're entering a new tile - use floor/ceil based on direction
+            let checkX, checkY;
+            if (dx > 0) {
+                checkX = Math.ceil(newGhostX);
+            } else if (dx < 0) {
+                checkX = Math.floor(newGhostX);
+            } else {
+                checkX = Math.round(newGhostX);
+            }
+
+            if (dy > 0) {
+                checkY = Math.ceil(newGhostY);
+            } else if (dy < 0) {
+                checkY = Math.floor(newGhostY);
+            } else {
+                checkY = Math.round(newGhostY);
+            }
 
             // Handle wrap
             if (checkX < 0) checkX = MAZE_COLS - 1;

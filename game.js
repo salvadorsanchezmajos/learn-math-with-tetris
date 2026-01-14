@@ -1532,9 +1532,9 @@ class PacManGame {
             }
         }
 
-        // Draw Pac-Man - grid position is tile center, convert to pixels
-        const px = this.pacman.x * TILE_SIZE;
-        const py = this.pacman.y * TILE_SIZE;
+        // Draw Pac-Man - convert grid position to pixel position
+        const px = this.pacman.x * TILE_SIZE + TILE_SIZE / 2;
+        const py = this.pacman.y * TILE_SIZE + TILE_SIZE / 2;
 
         // Pac-Man glow
         this.ctx.shadowBlur = 10;
@@ -1554,8 +1554,8 @@ class PacManGame {
 
         // Draw ghosts with improved visuals
         for (let ghost of this.ghosts) {
-            const gx = ghost.x * TILE_SIZE;
-            const gy = ghost.y * TILE_SIZE;
+            const gx = ghost.x * TILE_SIZE + TILE_SIZE / 2;
+            const gy = ghost.y * TILE_SIZE + TILE_SIZE / 2;
 
             // Ghost body
             const ghostColor = ghost.mode === 'frightened' ?

@@ -151,6 +151,9 @@ class GameMusic {
     }
 
     start() {
+        // Don't start music for Pac-Man
+        if (currentGame === 'pacman') return;
+
         if (this.isPlaying || this.isMuted) return;
 
         this.init();

@@ -1254,42 +1254,33 @@ class PacManGame {
             // Handle tunnel wrap
             if (this.pacman.x < -0.5) this.pacman.x = MAZE_COLS - 0.5;
             if (this.pacman.x >= MAZE_COLS - 0.5) this.pacman.x = -0.5;
-        } else {
-            // Hit a wall - stop at center of current tile to prevent penetration
-            if (dx !== 0) {
-                // Moving horizontally - snap to center of current tile
-                this.pacman.x = Math.round(this.pacman.x);
-            }
-            if (dy !== 0) {
-                // Moving vertically - snap to center of current tile
-                this.pacman.y = Math.round(this.pacman.y);
-            }
+        }
+        // If hitting a wall, just don't move - stay at current position
 
-            // Check for dots - use round to get the tile we're on
-            const cellX = Math.round(this.pacman.x);
-            const cellY = Math.round(this.pacman.y);
+        // Check for dots - use round to get the tile we're on
+        const cellX = Math.round(this.pacman.x);
+        const cellY = Math.round(this.pacman.y);
 
-            if (cellX >= 0 && cellX < MAZE_COLS && cellY >= 0 && cellY < MAZE_ROWS) {
-                if (this.maze[cellY][cellX] === 1) {
-                    this.maze[cellY][cellX] = 3;
-                    this.score += 10;
-                    this.dotsEaten++;
-                    this.checkMathBreak();
-                } else if (this.maze[cellY][cellX] === 2) {
-                    this.maze[cellY][cellX] = 3;
-                    this.score += 50;
-                    this.dotsEaten++;
-                    this.powerMode = true;
-                    this.powerModeTimer = 200;
-                    this.ghosts.forEach(g => g.mode = 'frightened');
-                    this.checkMathBreak();
-                }
+        if (cellX >= 0 && cellX < MAZE_COLS && cellY >= 0 && cellY < MAZE_ROWS) {
+            if (this.maze[cellY][cellX] === 1) {
+                this.maze[cellY][cellX] = 3;
+                this.score += 10;
+                this.dotsEaten++;
+                this.checkMathBreak();
+            } else if (this.maze[cellY][cellX] === 2) {
+                this.maze[cellY][cellX] = 3;
+                this.score += 50;
+                this.dotsEaten++;
+                this.powerMode = true;
+                this.powerModeTimer = 200;
+                this.ghosts.forEach(g => g.mode = 'frightened');
+                this.checkMathBreak();
             }
+        }
 
-            // Check level complete
-            if (this.dotsEaten >= this.totalDots) {
-                this.nextLevel();
-            }
+        // Check level complete
+        if (this.dotsEaten >= this.totalDots) {
+            this.nextLevel();
         }
 
         this.pacman.mouthOpen = (this.pacman.mouthOpen + 1) % 20;
@@ -1392,15 +1383,8 @@ class PacManGame {
                 // Handle tunnel wrap
                 if (ghost.x < -0.5) ghost.x = MAZE_COLS - 0.5;
                 if (ghost.x >= MAZE_COLS - 0.5) ghost.x = -0.5;
-            } else {
-                // Hit a wall - stop at center of current tile to prevent penetration
-                if (dx !== 0) {
-                    ghost.x = Math.round(ghost.x);
-                }
-                if (dy !== 0) {
-                    ghost.y = Math.round(ghost.y);
-                }
             }
+            // If hitting a wall, just don't move - stay at current position
 
             // Check collision with pacman
             const dist = Math.hypot(ghost.x - this.pacman.x, ghost.y - this.pacman.y);

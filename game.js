@@ -1490,6 +1490,7 @@ class PacManGame {
 
     loseLife() {
         this.lives--;
+        this.updateDisplay();
         if (this.lives <= 0) {
             this.gameOver();
         } else {

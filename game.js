@@ -1194,6 +1194,7 @@ class PacManGame {
                 dir: 0,
                 color: colors[i],
                 name: names[i],
+                personality: i, // 0=Blinky(aggressive), 1=Pinky(ambush), 2=Inky(flank), 3=Clyde(patrol)
                 mode: 'scatter', // scatter, chase, frightened
                 scatterTarget: { x: i * 9, y: i % 2 === 0 ? 0 : 30 },
                 modeTimer: 0
@@ -1370,17 +1371,44 @@ class PacManGame {
             this.powerModeTimer--;
             if (this.powerModeTimer <= 0) {
                 this.powerMode = false;
-                this.ghosts.forEach(g => g.mode = 'scatter');
+                this.ghosts.forEach(g => g.mode = 'chase');
             }
         }
 
         for (let ghost of this.ghosts) {
-            // Simple AI: move towards target
+            // Smart AI: each ghost has unique behavior
             let target;
             if (ghost.mode === 'frightened') {
-                target = { x: Math.random() * MAZE_COLS, y: Math.random() * MAZE_ROWS };
+                // Run away from Pac-Man
+                const awayX = ghost.x + (ghost.x - this.pacman.x) * 2;
+                const awayY = ghost.y + (ghost.y - this.pacman.y) * 2;
+                target = { x: awayX, y: awayY };
             } else if (ghost.mode === 'chase') {
-                target = { x: this.pacman.x, y: this.pacman.y };
+                // Each ghost has unique chase behavior
+                switch (ghost.personality) {
+                    case 0: // Blinky (red) - directly chases Pac-Man
+                        target = { x: this.pacman.x, y: this.pacman.y };
+                        break;
+                    case 1: // Pinky (pink) - ambushes 4 tiles ahead of Pac-Man
+                        const dirs = [[4, 0], [0, 4], [-4, 0], [0, -4]];
+                        const [pdx, pdy] = dirs[this.pacman.dir];
+                        target = { x: this.pacman.x + pdx, y: this.pacman.y + pdy };
+                        break;
+                    case 2: // Inky (cyan) - flanks using Blinky's position
+                        const blinky = this.ghosts[0];
+                        const pivotX = this.pacman.x + (this.pacman.dir === 0 ? 2 : this.pacman.dir === 2 ? -2 : 0);
+                        const pivotY = this.pacman.y + (this.pacman.dir === 1 ? 2 : this.pacman.dir === 3 ? -2 : 0);
+                        target = { x: pivotX + (pivotX - blinky.x), y: pivotY + (pivotY - blinky.y) };
+                        break;
+                    case 3: // Clyde (orange) - chases when far, scatters when close
+                        const distToPacman = Math.hypot(ghost.x - this.pacman.x, ghost.y - this.pacman.y);
+                        if (distToPacman > 8) {
+                            target = { x: this.pacman.x, y: this.pacman.y };
+                        } else {
+                            target = ghost.scatterTarget;
+                        }
+                        break;
+                }
             } else {
                 target = ghost.scatterTarget;
             }
@@ -1388,6 +1416,7 @@ class PacManGame {
             const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
             let bestDir = ghost.dir;
             let bestDist = Infinity;
+            const oppositeDir = (ghost.dir + 2) % 4; // Prevent 180-degree turns
 
             // Get ghost's current grid position
             const ghostGridX = Math.round(ghost.x);
@@ -1395,6 +1424,9 @@ class PacManGame {
 
             // Try all 4 directions
             for (let i = 0; i < 4; i++) {
+                // No-reverse rule: ghosts can't reverse direction unless in frightened mode
+                if (i === oppositeDir && ghost.mode !== 'frightened') continue;
+
                 const [dx, dy] = dirs[i];
                 let checkX = ghostGridX + dx;
                 let checkY = ghostGridY + dy;
@@ -1415,7 +1447,9 @@ class PacManGame {
 
             ghost.dir = bestDir;
             const [dx, dy] = dirs[ghost.dir];
-            const speed = ghost.mode === 'frightened' ? 0.08 : 0.12;
+            // Increased speed: frightened slower, normal faster, aggressive even faster
+            const baseSpeed = ghost.mode === 'frightened' ? 0.08 : 0.15;
+            const speed = ghost.personality === 0 ? baseSpeed * 1.1 : baseSpeed; // Blinky is slightly faster
 
             let newGhostX = ghost.x + dx * speed;
             let newGhostY = ghost.y + dy * speed;
@@ -1476,14 +1510,25 @@ class PacManGame {
                 }
             }
 
-            // Mode switching
-            ghost.modeTimer++;
-            if (ghost.mode === 'scatter' && ghost.modeTimer > 200) {
-                ghost.mode = 'chase';
-                ghost.modeTimer = 0;
-            } else if (ghost.mode === 'chase' && ghost.modeTimer > 200) {
-                ghost.mode = 'scatter';
-                ghost.modeTimer = 0;
+            // Dynamic mode switching based on distance and game state
+            if (ghost.mode !== 'frightened') {
+                ghost.modeTimer++;
+                const distToPacman = Math.hypot(ghost.x - this.pacman.x, ghost.y - this.pacman.y);
+
+                // More aggressive switching: shorter scatter, longer chase
+                if (ghost.mode === 'scatter') {
+                    // Switch to chase sooner if close to Pac-Man or after shorter time
+                    if (distToPacman < 10 || ghost.modeTimer > 100) {
+                        ghost.mode = 'chase';
+                        ghost.modeTimer = 0;
+                    }
+                } else if (ghost.mode === 'chase') {
+                    // Only scatter briefly and less often
+                    if (ghost.modeTimer > 300) {
+                        ghost.mode = 'scatter';
+                        ghost.modeTimer = 0;
+                    }
+                }
             }
         }
     }

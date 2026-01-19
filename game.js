@@ -1375,8 +1375,11 @@ class PacManGame {
             }
         }
 
+        // Difficulty scaling: 50% at level 1, 100% at level 5+
+        const difficultyFactor = Math.min(1.0, 0.5 + (this.level - 1) * 0.125);
+
         for (let ghost of this.ghosts) {
-            // Smart AI: each ghost has unique behavior
+            // Smart AI: each ghost has unique behavior (scales with level)
             let target;
             if (ghost.mode === 'frightened') {
                 // Run away from Pac-Man
@@ -1384,30 +1387,38 @@ class PacManGame {
                 const awayY = ghost.y + (ghost.y - this.pacman.y) * 2;
                 target = { x: awayX, y: awayY };
             } else if (ghost.mode === 'chase') {
-                // Each ghost has unique chase behavior
-                switch (ghost.personality) {
-                    case 0: // Blinky (red) - directly chases Pac-Man
-                        target = { x: this.pacman.x, y: this.pacman.y };
-                        break;
-                    case 1: // Pinky (pink) - ambushes 4 tiles ahead of Pac-Man
-                        const dirs = [[4, 0], [0, 4], [-4, 0], [0, -4]];
-                        const [pdx, pdy] = dirs[this.pacman.dir];
-                        target = { x: this.pacman.x + pdx, y: this.pacman.y + pdy };
-                        break;
-                    case 2: // Inky (cyan) - flanks using Blinky's position
-                        const blinky = this.ghosts[0];
-                        const pivotX = this.pacman.x + (this.pacman.dir === 0 ? 2 : this.pacman.dir === 2 ? -2 : 0);
-                        const pivotY = this.pacman.y + (this.pacman.dir === 1 ? 2 : this.pacman.dir === 3 ? -2 : 0);
-                        target = { x: pivotX + (pivotX - blinky.x), y: pivotY + (pivotY - blinky.y) };
-                        break;
-                    case 3: // Clyde (orange) - chases when far, scatters when close
-                        const distToPacman = Math.hypot(ghost.x - this.pacman.x, ghost.y - this.pacman.y);
-                        if (distToPacman > 8) {
+                // Each ghost has unique chase behavior (simplified at lower levels)
+                // At lower levels, add randomness to make ghosts less accurate
+                const useAdvancedAI = Math.random() < difficultyFactor;
+
+                if (useAdvancedAI) {
+                    switch (ghost.personality) {
+                        case 0: // Blinky (red) - directly chases Pac-Man
                             target = { x: this.pacman.x, y: this.pacman.y };
-                        } else {
-                            target = ghost.scatterTarget;
-                        }
-                        break;
+                            break;
+                        case 1: // Pinky (pink) - ambushes 4 tiles ahead of Pac-Man
+                            const dirs = [[4, 0], [0, 4], [-4, 0], [0, -4]];
+                            const [pdx, pdy] = dirs[this.pacman.dir];
+                            target = { x: this.pacman.x + pdx, y: this.pacman.y + pdy };
+                            break;
+                        case 2: // Inky (cyan) - flanks using Blinky's position
+                            const blinky = this.ghosts[0];
+                            const pivotX = this.pacman.x + (this.pacman.dir === 0 ? 2 : this.pacman.dir === 2 ? -2 : 0);
+                            const pivotY = this.pacman.y + (this.pacman.dir === 1 ? 2 : this.pacman.dir === 3 ? -2 : 0);
+                            target = { x: pivotX + (pivotX - blinky.x), y: pivotY + (pivotY - blinky.y) };
+                            break;
+                        case 3: // Clyde (orange) - chases when far, scatters when close
+                            const distToPacman = Math.hypot(ghost.x - this.pacman.x, ghost.y - this.pacman.y);
+                            if (distToPacman > 8) {
+                                target = { x: this.pacman.x, y: this.pacman.y };
+                            } else {
+                                target = ghost.scatterTarget;
+                            }
+                            break;
+                    }
+                } else {
+                    // Simple chase: just go directly to Pac-Man (used more at lower levels)
+                    target = { x: this.pacman.x, y: this.pacman.y };
                 }
             } else {
                 target = ghost.scatterTarget;
@@ -1424,8 +1435,9 @@ class PacManGame {
 
             // Try all 4 directions
             for (let i = 0; i < 4; i++) {
-                // No-reverse rule: ghosts can't reverse direction unless in frightened mode
-                if (i === oppositeDir && ghost.mode !== 'frightened') continue;
+                // No-reverse rule: only enforced at higher difficulty levels
+                const allowReverse = difficultyFactor < 0.75; // Allow reverse at levels 1-2
+                if (i === oppositeDir && ghost.mode !== 'frightened' && !allowReverse) continue;
 
                 const [dx, dy] = dirs[i];
                 let checkX = ghostGridX + dx;
@@ -1447,8 +1459,10 @@ class PacManGame {
 
             ghost.dir = bestDir;
             const [dx, dy] = dirs[ghost.dir];
-            // Increased speed: frightened slower, normal faster, aggressive even faster
-            const baseSpeed = ghost.mode === 'frightened' ? 0.08 : 0.15;
+            // Speed scales with difficulty: 50% slower at level 1, full speed at level 5+
+            const maxSpeed = 0.15;
+            const minSpeed = 0.08;
+            const baseSpeed = ghost.mode === 'frightened' ? 0.08 : (minSpeed + (maxSpeed - minSpeed) * difficultyFactor);
             const speed = ghost.personality === 0 ? baseSpeed * 1.1 : baseSpeed; // Blinky is slightly faster
 
             let newGhostX = ghost.x + dx * speed;
@@ -1510,21 +1524,27 @@ class PacManGame {
                 }
             }
 
-            // Dynamic mode switching based on distance and game state
+            // Dynamic mode switching based on distance and game state (scales with difficulty)
             if (ghost.mode !== 'frightened') {
                 ghost.modeTimer++;
                 const distToPacman = Math.hypot(ghost.x - this.pacman.x, ghost.y - this.pacman.y);
 
-                // More aggressive switching: shorter scatter, longer chase
+                // Aggression scales with level
+                // Level 1: 200 scatter, 200 chase (balanced)
+                // Level 5: 100 scatter, 300 chase (very aggressive)
+                const scatterTime = 200 - (100 * difficultyFactor);
+                const chaseTime = 200 + (100 * difficultyFactor);
+                const detectionRange = 10 + (5 * (1 - difficultyFactor)); // Wider at lower levels
+
                 if (ghost.mode === 'scatter') {
-                    // Switch to chase sooner if close to Pac-Man or after shorter time
-                    if (distToPacman < 10 || ghost.modeTimer > 100) {
+                    // Switch to chase sooner if close to Pac-Man or after time limit
+                    if (distToPacman < detectionRange || ghost.modeTimer > scatterTime) {
                         ghost.mode = 'chase';
                         ghost.modeTimer = 0;
                     }
                 } else if (ghost.mode === 'chase') {
-                    // Only scatter briefly and less often
-                    if (ghost.modeTimer > 300) {
+                    // Chase for longer at higher levels
+                    if (ghost.modeTimer > chaseTime) {
                         ghost.mode = 'scatter';
                         ghost.modeTimer = 0;
                     }

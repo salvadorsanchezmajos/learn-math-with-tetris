@@ -326,16 +326,31 @@ class FractionQuestionGenerator {
     }
 
     generateEasyFractions(operation) {
-        const denominators = [2, 3, 4, 5, 6];
-        const denominator = denominators[Math.floor(Math.random() * denominators.length)];
-        let num1 = Math.floor(Math.random() * denominator) + 1;
-        let num2 = Math.floor(Math.random() * denominator) + 1;
+        // Allow different but related denominators (e.g., 2 and 4, 3 and 6)
+        const denomPairs = [
+            [2, 4], [3, 6], [2, 6], [4, 8], [3, 9],
+            [5, 10], [2, 8], [3, 12], [4, 12], [6, 12]
+        ];
+        const pair = denomPairs[Math.floor(Math.random() * denomPairs.length)];
 
-        if (operation === 'SUBTRACT' && num1 < num2) {
-            num2 = Math.floor(Math.random() * num1) + 1;
+        // Randomly assign which denominator goes to which fraction
+        const [denom1, denom2] = Math.random() < 0.5 ? pair : [pair[1], pair[0]];
+
+        // Generate numerators (can be larger now)
+        let num1 = Math.floor(Math.random() * Math.min(denom1, 8)) + 1;
+        let num2 = Math.floor(Math.random() * Math.min(denom2, 8)) + 1;
+
+        // For subtraction, ensure first fraction is larger
+        if (operation === 'SUBTRACT') {
+            const val1 = num1 / denom1;
+            const val2 = num2 / denom2;
+            if (val1 < val2) {
+                // Swap to make first fraction larger
+                [num1, num2] = [num2, num1];
+            }
         }
 
-        return [new Fraction(num1, denominator), new Fraction(num2, denominator)];
+        return [new Fraction(num1, denom1), new Fraction(num2, denom2)];
     }
 
     generateMediumFractions(operation) {

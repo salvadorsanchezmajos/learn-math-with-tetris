@@ -555,7 +555,51 @@ class TetrisGame {
         this.setupTouchButton(this.dropBtn, () => this.hardDrop());
         this.setupTouchButton(this.pauseBtn, () => this.togglePause());
 
+        // Canvas touch/click controls
+        this.setupCanvasControls();
+
         submitAnswer.addEventListener('click', () => this.submitAnswerHandler());
+    }
+
+    setupCanvasControls() {
+        const handleCanvasInput = (e) => {
+            if (currentGame !== 'tetris' || this.isPaused || this.isGameOver || this.showQuestion) return;
+
+            e.preventDefault();
+            startMusicOnInteraction();
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+            // Get current piece position in pixels
+            const pieceX = (this.currentPosition.col + 2) * CELL_SIZE; // Approximate center
+            const pieceY = (this.currentPosition.row + 1) * CELL_SIZE;
+
+            // Determine direction based on touch/click position relative to piece
+            const dx = x - pieceX;
+            const dy = y - pieceY;
+
+            // Use absolute values to determine primary direction
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal movement
+                if (dx < 0) {
+                    this.moveLeft();
+                } else {
+                    this.moveRight();
+                }
+            } else {
+                // Vertical movement
+                if (dy < 0) {
+                    this.rotate(); // Tap above to rotate
+                } else {
+                    this.moveDown(); // Tap below to move down
+                }
+            }
+        };
+
+        this.canvas.addEventListener('click', handleCanvasInput);
+        this.canvas.addEventListener('touchstart', handleCanvasInput);
     }
 
     setupTouchButton(button, action) {
@@ -1150,7 +1194,51 @@ class PacManGame {
         this.setupTouchButton(this.downBtn, () => this.pacman.nextDir = 1);
         this.setupTouchButton(this.pauseBtn, () => this.togglePause());
 
+        // Canvas touch/click controls
+        this.setupCanvasControls();
+
         submitAnswer.addEventListener('click', () => this.submitAnswerHandler());
+    }
+
+    setupCanvasControls() {
+        const handleCanvasInput = (e) => {
+            if (currentGame !== 'pacman' || this.isPaused || this.isGameOver || this.showQuestion) return;
+
+            e.preventDefault();
+            initAudioContext();
+
+            const rect = this.canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+            // Get Pac-Man position in pixels
+            const pacmanX = this.pacman.x * TILE_SIZE + TILE_SIZE / 2;
+            const pacmanY = this.pacman.y * TILE_SIZE + TILE_SIZE / 2;
+
+            // Determine direction based on touch/click position relative to Pac-Man
+            const dx = x - pacmanX;
+            const dy = y - pacmanY;
+
+            // Use absolute values to determine primary direction
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal movement
+                if (dx < 0) {
+                    this.pacman.nextDir = 2; // Left
+                } else {
+                    this.pacman.nextDir = 0; // Right
+                }
+            } else {
+                // Vertical movement
+                if (dy < 0) {
+                    this.pacman.nextDir = 3; // Up
+                } else {
+                    this.pacman.nextDir = 1; // Down
+                }
+            }
+        };
+
+        this.canvas.addEventListener('click', handleCanvasInput);
+        this.canvas.addEventListener('touchstart', handleCanvasInput);
     }
 
     setupTouchButton(button, action) {

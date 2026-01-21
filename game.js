@@ -275,9 +275,9 @@ class Fraction {
 class FractionQuestionGenerator {
     generateQuestion(level) {
         let difficulty;
-        if (level <= 2) difficulty = 'EASY';
-        else if (level <= 5) difficulty = 'MEDIUM';
-        else if (level <= 8) difficulty = 'HARD';
+        if (level === 1) difficulty = 'EASY';
+        else if (level <= 3) difficulty = 'MEDIUM';
+        else if (level <= 5) difficulty = 'HARD';
         else difficulty = 'EXPERT';
 
         const operation = this.selectOperation(difficulty);

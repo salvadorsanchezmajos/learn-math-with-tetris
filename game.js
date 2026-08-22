@@ -336,11 +336,34 @@ const correctAnswerText = document.getElementById('correctAnswerText');
 const explanationText = document.getElementById('explanationText');
 const ruleText = document.getElementById('ruleText');
 const continueChallenge = document.getElementById('continueChallenge');
+const teamHud = document.getElementById('teamHud');
 
 const activeBank = QUESTION_BANKS.formulacion_binaria;
 let activeChallengeGame = null;
 let challengeResolved = false;
 let challengePhase = 'answering';
+
+function updateTeamChallengeOffset() {
+    if (!document.body.classList.contains('team-challenge-open')) return;
+
+    const hudBottom = teamHud.getBoundingClientRect().bottom;
+    if (!Number.isFinite(hudBottom)) return;
+
+    const gap = window.innerWidth <= 620 ? 8 : 14;
+    questionModal.style.paddingTop = `${Math.ceil(hudBottom + gap)}px`;
+}
+
+function setTeamChallengeOpen(isOpen) {
+    document.body.classList.toggle('team-challenge-open', isOpen);
+    if (isOpen) {
+        updateTeamChallengeOffset();
+        setTimeout(updateTeamChallengeOffset, 0);
+    } else {
+        questionModal.style.paddingTop = '';
+    }
+}
+
+window.addEventListener?.('resize', updateTeamChallengeOffset);
 
 class CurriculumQuestionGenerator {
     constructor(bank) {
@@ -422,7 +445,7 @@ function openChemistryChallenge(game) {
     });
 
     questionModal.classList.remove('hidden');
-    document.body.classList.toggle('team-challenge-open', typeof game.openReboundRound === 'function');
+    setTeamChallengeOpen(typeof game.openReboundRound === 'function');
     challengeNow.disabled = true;
     answerChoices.querySelector('button')?.focus();
     gameMusic.pause();
@@ -527,7 +550,7 @@ function cancelChemistryChallengeForTurnEnd(game) {
     game.currentQuestion = null;
     game.pendingChemistryReward = false;
     questionModal.classList.add('hidden');
-    document.body.classList.remove('team-challenge-open');
+    setTeamChallengeOpen(false);
     activeChallengeGame = null;
     challengeResolved = false;
     challengePhase = 'answering';
@@ -540,7 +563,7 @@ function closeChemistryChallenge() {
     game.showQuestion = false;
     game.currentQuestion = null;
     questionModal.classList.add('hidden');
-    document.body.classList.remove('team-challenge-open');
+    setTeamChallengeOpen(false);
     activeChallengeGame = null;
     challengeResolved = false;
     challengePhase = 'answering';
@@ -2433,7 +2456,7 @@ function returnToMenu() {
     document.getElementById('pacmanPauseOverlay').classList.add('hidden');
     document.getElementById('pacmanGameOverOverlay').classList.add('hidden');
     questionModal.classList.add('hidden');
-    document.body.classList.remove('team-challenge-open');
+    setTeamChallengeOpen(false);
     challengeNow.disabled = false;
     activeChallengeGame = null;
     challengeResolved = false;

@@ -350,7 +350,7 @@ body {
 
 .team-challenge-open .modal {
     align-items: flex-start;
-    padding-top: clamp(190px, 24vh, 260px);
+    padding-top: clamp(280px, 30vh, 340px);
 }
 
 .turn-status {

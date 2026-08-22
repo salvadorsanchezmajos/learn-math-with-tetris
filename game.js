@@ -641,6 +641,7 @@ const SHAPES = {
 
 class TetrisGame {
     constructor() {
+        this.gameType = 'tetris';
         this.board = [];
         this.currentPiece = null;
         this.currentPosition = { row: 0, col: 0 };
@@ -754,7 +755,9 @@ class TetrisGame {
         this.setupTouchButton(this.rotateBtn, () => this.rotate());
         this.setupTouchButton(this.dropBtn, () => this.hardDrop());
         this.setupTouchButton(this.pauseBtn, () => this.togglePause());
-        this.turnClockToggle.addEventListener('click', () => this.toggleTurnClock());
+        this.turnClockToggle.addEventListener('click', () => {
+            if (currentGame === this.gameType) this.toggleTurnClock();
+        });
 
         // Canvas touch/click controls
         this.setupCanvasControls();
@@ -968,7 +971,7 @@ class TetrisGame {
     }
 
     isTurnClockRunning() {
-        return currentGame === 'tetris'
+        return currentGame === this.gameType
             && !this.isGameOver
             && !this.isTurnTransition
             && !this.reboundOpen
@@ -1574,6 +1577,7 @@ const MAZE_LAYOUT = [
 
 class PacManGame {
     constructor() {
+        this.gameType = 'pacman';
         this.canvas = document.getElementById('pacmanCanvas');
         this.ctx = this.canvas.getContext('2d');
 
@@ -1590,6 +1594,22 @@ class PacManGame {
         this.showQuestion = false;
         this.currentQuestion = null;
         this.gameLoop = null;
+        this.pendingChemistryReward = false;
+        this.isRewardTransition = false;
+        this.rewardEndTimer = null;
+
+        this.teams = [];
+        this.activeTeamIndex = 0;
+        this.turnDurationMs = 120000;
+        this.referenceRatePerMinute = DEFAULT_REFERENCE_RATE;
+        this.turnRemainingMs = this.turnDurationMs;
+        this.turnClockInterval = null;
+        this.lastTurnClockTick = null;
+        this.turnTransitionTimer = null;
+        this.isTurnTransition = false;
+        this.reboundOpen = false;
+        this.reboundAwardCallback = null;
+        this.isClockManuallyPaused = false;
 
         this.totalDots = 0;
         this.dotsEaten = 0;
@@ -1610,6 +1630,17 @@ class PacManGame {
         this.finalScore = document.getElementById('pacmanFinalScore');
         this.finalChemistryScore = document.getElementById('pacmanFinalChemistryScore');
         this.restartButton = document.getElementById('pacmanRestartButton');
+        this.rewardToast = document.getElementById('pacmanRewardToast');
+        this.rewardToastText = document.getElementById('pacmanRewardToastText');
+        this.activeTeamLabel = document.getElementById('activeTeamLabel');
+        this.turnTimer = document.getElementById('turnTimer');
+        this.turnClockToggle = document.getElementById('turnClockToggle');
+        this.teamScoreboard = document.getElementById('teamScoreboard');
+        this.reboundBanner = document.getElementById('reboundBanner');
+        this.turnOverlay = document.getElementById('pacmanTurnOverlay');
+        this.turnEndReason = document.getElementById('pacmanTurnEndReason');
+        this.turnEndTitle = document.getElementById('pacmanTurnEndTitle');
+        this.nextTeamText = document.getElementById('pacmanNextTeamText');
 
         // Controls
         this.leftBtn = document.getElementById('pacmanLeftBtn');
@@ -1655,6 +1686,9 @@ class PacManGame {
         this.setupTouchButton(this.upBtn, () => this.pacman.nextDir = 3);
         this.setupTouchButton(this.downBtn, () => this.pacman.nextDir = 1);
         this.setupTouchButton(this.pauseBtn, () => this.togglePause());
+        this.turnClockToggle.addEventListener('click', () => {
+            if (currentGame === this.gameType) this.toggleTurnClock();
+        });
 
         // Canvas touch/click controls
         this.setupCanvasControls();
@@ -2269,33 +2303,70 @@ class PacManGame {
         }
     }
 
-    togglePause() {
-        if (this.isGameOver || this.showQuestion) return;
-        this.isPaused = !this.isPaused;
-        this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
-        this.pauseBtn.textContent = this.isPaused ? 'Continuar' : 'Pausa';
-
-        if (this.isPaused) {
-            gameMusic.pause();
-        } else {
-            gameMusic.resume();
-        }
+    clearTransientEffects() {
+        clearTimeout(this.rewardEndTimer);
+        this.rewardEndTimer = null;
+        this.pendingChemistryReward = false;
+        this.isRewardTransition = false;
+        this.rewardToast.classList.add('hidden');
     }
 
-    gameOver() {
+    applyChemistryReward(onComplete) {
+        this.pendingChemistryReward = false;
+        this.isPaused = true;
+        this.isRewardTransition = true;
+        this.powerMode = false;
+        this.powerModeTimer = 0;
+        this.initGhosts();
+        this.rewardToastText.textContent = 'Los cuatro fantasmas regresan a su casa antes de reanudar el juego.';
+        this.rewardToast.classList.remove('hidden');
+        this.draw();
+
+        clearTimeout(this.rewardEndTimer);
+        this.rewardEndTimer = setTimeout(() => {
+            this.rewardEndTimer = null;
+            this.rewardToast.classList.add('hidden');
+            this.isRewardTransition = false;
+            if (onComplete) onComplete();
+        }, 1450);
+    }
+
+    endTeamTurn(reason) {
+        if (this.isTurnTransition) return;
+
+        cancelChemistryChallengeForTurnEnd(this);
+        this.clearTransientEffects();
+        this.closeReboundRound();
+        this.isTurnTransition = true;
         this.isGameOver = true;
+        this.isPaused = true;
+        this.renderTurnTimer();
         clearTimeout(this.gameLoop);
-        this.finalScore.textContent = this.score;
-        this.finalChemistryScore.textContent = this.formatChemistryScore(true);
-        this.gameOverOverlay.classList.remove('hidden');
+
+        const finishedLabel = this.getActiveTeamLabel();
+        const nextIndex = (this.activeTeamIndex + 1) % this.teams.length;
+        const nextLabel = this.teams[nextIndex].label;
+        this.turnEndReason.textContent = reason === 'gameOver' ? 'GAME OVER' : 'TIEMPO AGOTADO';
+        this.turnEndTitle.textContent = `Fin del turno del equipo ${finishedLabel}`;
+        this.nextTeamText.textContent = `A continuación: equipo ${nextLabel}`;
+        this.turnOverlay.classList.remove('hidden');
+        challengeNow.disabled = true;
         gameMusic.pause();
+
+        clearTimeout(this.turnTransitionTimer);
+        this.turnTransitionTimer = setTimeout(() => {
+            this.turnTransitionTimer = null;
+            this.startTeamTurn(nextIndex);
+        }, TEAM_TURN_TRANSITION_MS);
     }
 
-    showQuestionModal() {
-        openChemistryChallenge(this);
-    }
+    startTeamTurn(teamIndex, countTurn = true) {
+        clearTimeout(this.gameLoop);
+        this.clearTransientEffects();
+        this.activeTeamIndex = teamIndex;
+        if (countTurn) this.teams[teamIndex].turnsStarted++;
+        this.turnRemainingMs = this.turnDurationMs;
 
-    restart() {
         this.initMaze();
         this.initGhosts();
         this.pacman = { x: 14, y: 22.5, dir: 0, nextDir: 0, mouthOpen: 0 };
@@ -2310,15 +2381,38 @@ class PacManGame {
         this.currentQuestion = null;
         this.powerMode = false;
         this.powerModeTimer = 0;
+        this.fruit = null;
+        this.lastDotEaten = null;
+        this.isTurnTransition = false;
+        this.isClockManuallyPaused = false;
 
+        this.turnOverlay.classList.add('hidden');
         this.gameOverOverlay.classList.add('hidden');
         this.pauseOverlay.classList.add('hidden');
-        questionModal.classList.add('hidden');
         this.pauseBtn.textContent = 'Pausa';
-
+        challengeNow.disabled = false;
+        this.lastTurnClockTick = performance.now();
+        this.renderTeamHud();
         this.updateDisplay();
-        gameMusic.resume();
+        this.draw();
         this.startGameLoop();
+        gameMusic.resume();
+    }
+
+    togglePause() {
+        this.toggleTurnClock();
+    }
+
+    gameOver() {
+        this.endTeamTurn('gameOver');
+    }
+
+    showQuestionModal() {
+        openChemistryChallenge(this);
+    }
+
+    restart() {
+        this.startTeamTurn(this.activeTeamIndex, false);
     }
 
     updateDisplay() {
@@ -2350,37 +2444,59 @@ class PacManGame {
         this.gameLoop = setTimeout(loop, 1000 / 30);
     }
 
-    start() {
+    start(config = {}) {
         clearTimeout(this.gameLoop);
-        this.initMaze();
-        this.initGhosts();
-
-        // Reset Pac-Man position - center of tile
-        this.pacman = { x: 14, y: 22.5, dir: 0, nextDir: 0, mouthOpen: 0 };
-        this.score = 0;
-        this.level = 1;
-        this.lives = 3;
-        this.chemistryCorrect = 0;
-        this.chemistryAnswered = 0;
-        this.isPaused = false;
-        this.isGameOver = false;
-        this.showQuestion = false;
-        this.currentQuestion = null;
-        this.gameOverOverlay.classList.add('hidden');
-        this.pauseOverlay.classList.add('hidden');
-        this.pauseBtn.textContent = 'Pausa';
-
-        this.updateDisplay();
-        this.draw();
-        this.startGameLoop();
-        gameMusic.resume();
+        clearTimeout(this.turnTransitionTimer);
+        clearInterval(this.turnClockInterval);
+        this.clearTransientEffects();
+        const teamCount = Math.min(8, Math.max(2, Number(config.teamCount) || 4));
+        const turnSeconds = Math.min(600, Math.max(30, Number(config.turnSeconds) || 120));
+        const referenceRate = Math.min(10, Math.max(0.1, Number(config.referenceRate) || DEFAULT_REFERENCE_RATE));
+        this.teams = Array.from({ length: teamCount }, (_, index) => ({
+            label: String.fromCharCode(65 + index),
+            score: 0,
+            directCorrect: 0,
+            reboundCorrect: 0,
+            turnsStarted: 0
+        }));
+        this.turnDurationMs = turnSeconds * 1000;
+        this.referenceRatePerMinute = referenceRate;
+        this.activeTeamIndex = 0;
+        questionGenerator.reset();
+        this.startTurnClock();
+        this.startTeamTurn(0);
     }
 
     stop() {
         clearTimeout(this.gameLoop);
+        clearTimeout(this.turnTransitionTimer);
+        clearInterval(this.turnClockInterval);
+        this.turnTransitionTimer = null;
+        this.turnClockInterval = null;
+        this.closeReboundRound();
+        this.clearTransientEffects();
+        this.turnOverlay.classList.add('hidden');
         gameMusic.pause();
     }
 }
+
+[
+    'getActiveTeamLabel',
+    'awardActiveTeamPoint',
+    'calculateTeamGrade',
+    'formatTeamGrade',
+    'getReboundOrderIndices',
+    'openReboundRound',
+    'awardReboundPoint',
+    'closeReboundRound',
+    'renderTeamHud',
+    'renderTurnTimer',
+    'isTurnClockRunning',
+    'toggleTurnClock',
+    'startTurnClock'
+].forEach(methodName => {
+    PacManGame.prototype[methodName] = TetrisGame.prototype[methodName];
+});
 
 // ============================================================================
 // MENU SYSTEM
@@ -2438,7 +2554,7 @@ function startGame(gameType) {
         gameMusic.stop();
         if (tetrisGame) tetrisGame.stop();
         if (!pacmanGame) pacmanGame = new PacManGame();
-        pacmanGame.start();
+        pacmanGame.start(getTeamConfig());
     }
 }
 

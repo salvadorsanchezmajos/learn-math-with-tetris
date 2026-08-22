@@ -2162,7 +2162,7 @@ body::before {
 #tetrisGame {
     display: grid;
     grid-template-columns: minmax(112px, 0.72fr) auto minmax(112px, 0.72fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     align-items: center;
     justify-content: center;
     gap: 12px 18px;
@@ -2402,6 +2402,8 @@ body::before {
 
 #pacmanGame {
     align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
 #pacmanCanvas {
@@ -2409,6 +2411,17 @@ body::before {
     border: 1px solid rgba(255, 204, 102, 0.52);
     border-radius: 9px;
     box-shadow: 0 0 0 1px rgba(255, 204, 102, 0.07), 0 0 30px rgba(255, 204, 102, 0.1);
+    max-height: 54vh;
+}
+
+.pacman-reward-toast {
+    background: rgba(45, 35, 13, 0.96);
+    border-color: rgba(255, 204, 102, 0.68);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.44), 0 0 32px rgba(255, 204, 102, 0.18);
+}
+
+.pacman-reward-toast strong {
+    color: var(--amber);
 }
 
 .touch-controls {

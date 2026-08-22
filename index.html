@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Arcade educativo de Física y Química con retos de formulación y feedback inmediato.">
     <title>Física y Química Arcade</title>
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
     <div class="site-backdrop" aria-hidden="true">
@@ -84,7 +84,7 @@
             </section>
             <div class="mode-label">
                 <span class="config-number">02</span>
-                <div><strong>Elige el modo</strong><small>La configuración se aplica al Tetris por equipos</small></div>
+                <div><strong>Elige el modo</strong><small>La configuración se aplica a los dos juegos por equipos</small></div>
             </div>
             <div class="menu-buttons">
                 <button id="playTetris" class="menu-btn tetris-btn">
@@ -99,9 +99,9 @@
                 <button id="playPacman" class="menu-btn pacman-btn">
                     <span class="btn-icon maze-icon" aria-hidden="true"><i></i><i></i></span>
                     <span class="btn-copy">
-                        <span class="btn-kicker">INDIVIDUAL · PRÁCTICA</span>
+                        <span class="btn-kicker">EQUIPOS · EVALUABLE</span>
                         <span class="btn-text">Laberinto químico</span>
-                        <small>Tres retos por nivel</small>
+                        <small>Tres retos por nivel · rebotes</small>
                     </span>
                     <span class="btn-arrow" aria-hidden="true">→</span>
                 </button>
@@ -131,22 +131,22 @@
             </div>
         </div>
 
-        <div class="game-area" id="tetrisGame">
-            <section id="teamHud" class="team-hud" aria-label="Marcador de equipos">
-                <div class="turn-status">
-                    <div>
-                        <span class="turn-kicker">EN JUEGO</span>
-                        <strong id="activeTeamLabel">Equipo A</strong>
-                    </div>
-                    <div class="turn-clock-controls">
-                        <div id="turnTimer" class="turn-timer" aria-label="Tiempo restante">02:00</div>
-                        <button id="turnClockToggle" class="turn-clock-toggle" type="button" aria-pressed="false">Detener reloj</button>
-                    </div>
+        <section id="teamHud" class="team-hud" aria-label="Marcador de equipos">
+            <div class="turn-status">
+                <div>
+                    <span class="turn-kicker">EN JUEGO</span>
+                    <strong id="activeTeamLabel">Equipo A</strong>
                 </div>
-                <div id="reboundBanner" class="rebound-banner hidden" aria-live="assertive"></div>
-                <div id="teamScoreboard" class="team-scoreboard"></div>
-            </section>
+                <div class="turn-clock-controls">
+                    <div id="turnTimer" class="turn-timer" aria-label="Tiempo restante">02:00</div>
+                    <button id="turnClockToggle" class="turn-clock-toggle" type="button" aria-pressed="false">Detener reloj</button>
+                </div>
+            </div>
+            <div id="reboundBanner" class="rebound-banner hidden" aria-live="assertive"></div>
+            <div id="teamScoreboard" class="team-scoreboard"></div>
+        </section>
 
+        <div class="game-area" id="tetrisGame">
             <div class="side-panel left-panel">
                 <div class="info-box">
                     <h3>Siguiente</h3>
@@ -215,10 +215,14 @@
 
             <div class="board-container">
                 <canvas id="pacmanCanvas" width="560" height="620"></canvas>
+                <div id="pacmanRewardToast" class="reward-toast pacman-reward-toast hidden" aria-live="assertive">
+                    <strong>¡Respuesta correcta!</strong>
+                    <span id="pacmanRewardToastText">Los fantasmas vuelven a su casa.</span>
+                </div>
                 <div id="pacmanPauseOverlay" class="overlay hidden">
                     <div class="overlay-content">
                         <h2>PAUSA</h2>
-                        <p>Pulsa «Continuar» para reanudar.</p>
+                        <p>Pulsa «Reanudar reloj» para continuar el turno.</p>
                     </div>
                 </div>
                 <div id="pacmanGameOverOverlay" class="overlay hidden">
@@ -229,19 +233,27 @@
                         <button id="pacmanRestartButton">Jugar otra vez</button>
                     </div>
                 </div>
+                <div id="pacmanTurnOverlay" class="overlay turn-overlay hidden" aria-live="assertive">
+                    <div class="overlay-content">
+                        <p id="pacmanTurnEndReason" class="turn-end-reason">TIEMPO AGOTADO</p>
+                        <h2 id="pacmanTurnEndTitle">Fin del turno del equipo A</h2>
+                        <p id="pacmanNextTeamText">A continuación: equipo B</p>
+                    </div>
+                </div>
             </div>
 
             <div class="side-panel right-panel">
                 <div class="info-box">
-                    <h3>Puntos</h3>
+                    <h3>Puntos de juego</h3>
                     <p id="pacmanScoreDisplay">0</p>
+                    <small>No cuentan en el marcador</small>
                 </div>
                 <div class="info-box">
                     <h3>Nivel</h3>
                     <p id="pacmanLevelDisplay">1</p>
                 </div>
                 <div class="info-box chemistry-box">
-                    <h3>Formulación</h3>
+                    <h3>Retos del turno</h3>
                     <p id="pacmanChemistryScoreDisplay">0/0</p>
                 </div>
             </div>
@@ -303,6 +315,6 @@
     </div>
 
     <script src="question-banks.js?v=1"></script>
-    <script src="game.js?v=15"></script>
+    <script src="game.js?v=16"></script>
 </body>
 </html>

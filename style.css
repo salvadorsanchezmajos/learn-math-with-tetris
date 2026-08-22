@@ -311,6 +311,48 @@ body {
     justify-content: center;
 }
 
+.reward-toast {
+    position: absolute;
+    top: 44%;
+    left: 50%;
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: min(88%, 270px);
+    padding: 15px 17px;
+    color: #effff4;
+    background: rgba(9, 49, 31, 0.96);
+    border: 2px solid #55df80;
+    border-radius: 13px;
+    box-shadow: 0 0 28px rgba(85, 223, 128, 0.5);
+    text-align: center;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: reward-pop 0.32s ease-out;
+}
+
+.reward-toast strong {
+    color: #8df2b4;
+    font-size: 1.25rem;
+}
+
+.reward-toast span {
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+@keyframes reward-pop {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -42%) scale(0.86);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
 #gameCanvas {
     background: rgba(0, 0, 0, 0.5);
     border: 3px solid #00d4ff;

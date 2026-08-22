@@ -360,6 +360,7 @@ function resolveChemistryChallenge(selectedIndex) {
     const isCorrect = selectedIndex === question.correctIndex;
     game.chemistryAnswered++;
     if (isCorrect) game.chemistryCorrect++;
+    game.pendingChemistryReward = isCorrect && typeof game.applyChemistryReward === 'function';
 
     [...answerChoices.children].forEach((button, index) => {
         button.disabled = true;
@@ -384,13 +385,23 @@ function closeChemistryChallenge() {
 
     const game = activeChallengeGame;
     game.showQuestion = false;
-    game.isPaused = false;
     game.currentQuestion = null;
     questionModal.classList.add('hidden');
-    challengeNow.disabled = false;
     activeChallengeGame = null;
     challengeResolved = false;
-    gameMusic.resume();
+
+    if (game.pendingChemistryReward && typeof game.applyChemistryReward === 'function') {
+        challengeNow.disabled = true;
+        game.applyChemistryReward(() => {
+            game.isPaused = false;
+            challengeNow.disabled = false;
+            gameMusic.resume();
+        });
+    } else {
+        game.isPaused = false;
+        challengeNow.disabled = false;
+        gameMusic.resume();
+    }
 }
 
 continueChallenge.addEventListener('click', closeChemistryChallenge);
@@ -423,6 +434,9 @@ const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 const CELL_SIZE = 30;
 const ROWS_FOR_QUESTION = 2;
+const LINE_CLEAR_OBSERVE_MS = 1100;
+const REWARD_FLASH_MS = 420;
+const REWARD_TOTAL_MS = 1650;
 
 const COLORS = {
     I: '#00D4FF', O: '#FFE135', T: '#AA66CC', S: '#66BB6A',
@@ -456,6 +470,13 @@ class TetrisGame {
         this.chemistryAnswered = 0;
         this.currentQuestion = null;
         this.gameLoop = null;
+        this.questionDelayTimer = null;
+        this.rewardFlashTimer = null;
+        this.rewardEndTimer = null;
+        this.isQuestionTransition = false;
+        this.isRewardTransition = false;
+        this.pendingChemistryReward = false;
+        this.bonusFlashActive = false;
 
         // Canvas setup
         this.canvas = document.getElementById('gameCanvas');
@@ -473,6 +494,8 @@ class TetrisGame {
         this.finalScore = document.getElementById('finalScore');
         this.finalChemistryScore = document.getElementById('finalChemistryScore');
         this.restartButton = document.getElementById('restartButton');
+        this.rewardToast = document.getElementById('rewardToast');
+        this.rewardToastText = document.getElementById('rewardToastText');
 
         // Controls
         this.leftBtn = document.getElementById('leftBtn');
@@ -681,11 +704,30 @@ class TetrisGame {
         const shouldShowQuestion = this.rowsSinceLastQuestion >= ROWS_FOR_QUESTION;
         if (shouldShowQuestion) {
             this.rowsSinceLastQuestion = 0;
-            this.showQuestionModal();
         }
 
         this.spawnNewPiece();
         this.updateDisplay();
+        this.draw();
+
+        if (shouldShowQuestion && !this.isGameOver) {
+            this.scheduleQuestionAfterLineClear();
+        }
+    }
+
+    scheduleQuestionAfterLineClear() {
+        clearTimeout(this.questionDelayTimer);
+        this.isPaused = true;
+        this.isQuestionTransition = true;
+        challengeNow.disabled = true;
+
+        this.questionDelayTimer = setTimeout(() => {
+            this.questionDelayTimer = null;
+            this.isQuestionTransition = false;
+            if (currentGame === 'tetris' && !this.isGameOver) {
+                this.showQuestionModal();
+            }
+        }, LINE_CLEAR_OBSERVE_MS);
     }
 
     clearRows() {
@@ -778,7 +820,7 @@ class TetrisGame {
     }
 
     togglePause() {
-        if (this.isGameOver || this.showQuestion) return;
+        if (this.isGameOver || this.showQuestion || this.isQuestionTransition || this.isRewardTransition) return;
         this.isPaused = !this.isPaused;
         this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
         this.pauseBtn.textContent = this.isPaused ? 'Continuar' : 'Pausa';
@@ -791,6 +833,7 @@ class TetrisGame {
     }
 
     gameOver() {
+        this.clearTransientEffects();
         this.isGameOver = true;
         clearTimeout(this.gameLoop);
         this.finalScore.textContent = this.score;
@@ -800,10 +843,61 @@ class TetrisGame {
     }
 
     showQuestionModal() {
+        clearTimeout(this.questionDelayTimer);
+        this.questionDelayTimer = null;
+        this.isQuestionTransition = false;
         openChemistryChallenge(this);
     }
 
+    applyChemistryReward(onComplete) {
+        const bonusPoints = this.calculateScore(1, this.level);
+        this.pendingChemistryReward = false;
+        this.isPaused = true;
+        this.isRewardTransition = true;
+        this.bonusFlashActive = true;
+        this.rewardToastText.textContent = `Respuesta correcta: línea base eliminada · +${bonusPoints} puntos.`;
+        this.rewardToast.classList.remove('hidden');
+        this.draw();
+
+        clearTimeout(this.rewardFlashTimer);
+        clearTimeout(this.rewardEndTimer);
+
+        this.rewardFlashTimer = setTimeout(() => {
+            this.board.splice(BOARD_HEIGHT - 1, 1);
+            this.board.unshift(Array(BOARD_WIDTH).fill(null).map(() => ({ filled: false, color: null })));
+            this.rowsCleared += 1;
+            this.score += bonusPoints;
+            this.level = 1 + Math.floor(this.rowsCleared / 10);
+            this.bonusFlashActive = false;
+            this.updateDisplay();
+            this.draw();
+        }, REWARD_FLASH_MS);
+
+        this.rewardEndTimer = setTimeout(() => {
+            this.rewardToast.classList.add('hidden');
+            this.isRewardTransition = false;
+            this.rewardFlashTimer = null;
+            this.rewardEndTimer = null;
+            onComplete();
+        }, REWARD_TOTAL_MS);
+    }
+
+    clearTransientEffects() {
+        clearTimeout(this.questionDelayTimer);
+        clearTimeout(this.rewardFlashTimer);
+        clearTimeout(this.rewardEndTimer);
+        this.questionDelayTimer = null;
+        this.rewardFlashTimer = null;
+        this.rewardEndTimer = null;
+        this.isQuestionTransition = false;
+        this.isRewardTransition = false;
+        this.pendingChemistryReward = false;
+        this.bonusFlashActive = false;
+        this.rewardToast.classList.add('hidden');
+    }
+
     restart() {
+        this.clearTransientEffects();
         this.initBoard();
         this.currentPiece = this.randomTetromino();
         this.nextPiece = this.randomTetromino();
@@ -900,6 +994,15 @@ class TetrisGame {
                 }
             }
         }
+
+        if (this.bonusFlashActive) {
+            const baseY = (BOARD_HEIGHT - 1) * CELL_SIZE;
+            this.ctx.fillStyle = 'rgba(85, 223, 128, 0.62)';
+            this.ctx.fillRect(0, baseY, this.canvas.width, CELL_SIZE);
+            this.ctx.strokeStyle = '#effff4';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(2, baseY + 2, this.canvas.width - 4, CELL_SIZE - 4);
+        }
     }
 
     drawCell(context, col, row, color) {
@@ -988,6 +1091,7 @@ class TetrisGame {
 
     start() {
         clearTimeout(this.gameLoop);
+        this.clearTransientEffects();
         this.initBoard();
         this.currentPiece = this.randomTetromino();
         this.nextPiece = this.randomTetromino();
@@ -1014,6 +1118,7 @@ class TetrisGame {
 
     stop() {
         clearTimeout(this.gameLoop);
+        this.clearTransientEffects();
         gameMusic.pause();
     }
 }

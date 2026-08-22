@@ -14,19 +14,40 @@ const gameTitle = document.getElementById('gameTitle');
 const challengeNow = document.getElementById('challengeNow');
 const teamCountInput = document.getElementById('teamCountInput');
 const turnTimeInput = document.getElementById('turnTimeInput');
+const referenceRateInput = document.getElementById('referenceRateInput');
+const referenceRateHint = document.getElementById('referenceRateHint');
 
 function clampNumber(value, min, max, fallback) {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? Math.min(max, Math.max(min, Math.round(parsed))) : fallback;
 }
 
+function clampDecimal(value, min, max, fallback) {
+    if (String(value).trim() === '') return fallback;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.round(Math.min(max, Math.max(min, parsed)) * 10) / 10;
+}
+
+function formatReferenceCount(value) {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1).replace('.', ',');
+}
+
+function updateReferenceRateHint(turnSeconds, referenceRate) {
+    const referenceCorrect = referenceRate * turnSeconds / 60;
+    referenceRateHint.textContent = `Con ${turnSeconds} s: ${formatReferenceCount(referenceCorrect)} aciertos propios equivalen a 9,5.`;
+}
+
 function getTeamConfig() {
     const config = {
         teamCount: clampNumber(teamCountInput.value, 2, 8, 4),
-        turnSeconds: clampNumber(turnTimeInput.value, 30, 600, 120)
+        turnSeconds: clampNumber(turnTimeInput.value, 30, 600, 120),
+        referenceRate: clampDecimal(referenceRateInput.value, 0.1, 10, 3)
     };
     teamCountInput.value = config.teamCount;
     turnTimeInput.value = config.turnSeconds;
+    referenceRateInput.value = config.referenceRate;
+    updateReferenceRateHint(config.turnSeconds, config.referenceRate);
     try {
         localStorage.setItem('fyqTetrisTeamConfig', JSON.stringify(config));
     } catch (error) {
@@ -40,6 +61,7 @@ try {
     if (savedConfig) {
         teamCountInput.value = clampNumber(savedConfig.teamCount, 2, 8, 4);
         turnTimeInput.value = clampNumber(savedConfig.turnSeconds, 30, 600, 120);
+        referenceRateInput.value = clampDecimal(savedConfig.referenceRate, 0.1, 10, 3);
     }
 } catch (error) {
     // Se mantienen los valores iniciales del formulario.
@@ -47,6 +69,8 @@ try {
 
 teamCountInput.addEventListener('change', getTeamConfig);
 turnTimeInput.addEventListener('change', getTeamConfig);
+referenceRateInput.addEventListener('change', getTeamConfig);
+getTeamConfig();
 
 // ============================================================================
 // SHARED MUSIC SYSTEM
@@ -609,6 +633,7 @@ class TetrisGame {
         this.teams = [];
         this.activeTeamIndex = 0;
         this.turnDurationMs = 120000;
+        this.referenceRatePerMinute = 3;
         this.turnRemainingMs = this.turnDurationMs;
         this.turnClockInterval = null;
         this.lastTurnClockTick = null;
@@ -788,7 +813,23 @@ class TetrisGame {
         const team = this.teams[this.activeTeamIndex];
         if (!team) return;
         team.score++;
+        team.directCorrect++;
         this.renderTeamHud();
+    }
+
+    calculateTeamGrade(team) {
+        const referenceCorrect = this.referenceRatePerMinute
+            * (this.turnDurationMs / 60000)
+            * team.turnsStarted;
+        const directBase = referenceCorrect > 0 && team.directCorrect > 0
+            ? 10 * (1 - Math.pow(20, -team.directCorrect / referenceCorrect))
+            : 0;
+        const reboundBonus = Math.min(2, 0.5 * team.reboundCorrect);
+        return Math.min(10, directBase + reboundBonus);
+    }
+
+    formatTeamGrade(team) {
+        return this.calculateTeamGrade(team).toFixed(1).replace('.', ',');
     }
 
     getReboundOrderIndices() {
@@ -812,6 +853,7 @@ class TetrisGame {
 
         const winner = this.teams[teamIndex];
         winner.score++;
+        winner.reboundCorrect++;
         const callback = this.reboundAwardCallback;
         this.reboundOpen = false;
         this.reboundAwardCallback = null;
@@ -846,8 +888,12 @@ class TetrisGame {
             const value = document.createElement('strong');
             value.textContent = team.score;
             const caption = document.createElement('small');
-            caption.textContent = team.score === 1 ? 'respuesta correcta' : 'respuestas correctas';
-            points.append(value, caption);
+            caption.textContent = `Propios ${team.directCorrect} · Rebotes ${team.reboundCorrect}`;
+            const grade = document.createElement('span');
+            grade.className = 'team-grade';
+            grade.textContent = `Nota prov. ${this.formatTeamGrade(team)}`;
+            points.append(value, caption, grade);
+            card.title = `Equipo ${team.label}: ${team.score} aciertos; nota provisional ${this.formatTeamGrade(team)}`;
 
             const awardButton = document.createElement('button');
             awardButton.type = 'button';
@@ -962,6 +1008,7 @@ class TetrisGame {
         clearTimeout(this.gameLoop);
         this.clearTransientEffects();
         this.activeTeamIndex = teamIndex;
+        this.teams[teamIndex].turnsStarted++;
         this.turnRemainingMs = this.turnDurationMs;
         this.initBoard();
         this.currentPiece = this.randomTetromino();
@@ -1420,11 +1467,16 @@ class TetrisGame {
         this.clearTransientEffects();
         const teamCount = Math.min(8, Math.max(2, Number(config.teamCount) || 4));
         const turnSeconds = Math.min(600, Math.max(30, Number(config.turnSeconds) || 120));
+        const referenceRate = Math.min(10, Math.max(0.1, Number(config.referenceRate) || 3));
         this.teams = Array.from({ length: teamCount }, (_, index) => ({
             label: String.fromCharCode(65 + index),
-            score: 0
+            score: 0,
+            directCorrect: 0,
+            reboundCorrect: 0,
+            turnsStarted: 0
         }));
         this.turnDurationMs = turnSeconds * 1000;
+        this.referenceRatePerMinute = referenceRate;
         this.activeTeamIndex = 0;
         questionGenerator.reset();
         this.startTurnClock();

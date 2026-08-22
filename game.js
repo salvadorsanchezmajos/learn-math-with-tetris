@@ -16,6 +16,9 @@ const teamCountInput = document.getElementById('teamCountInput');
 const turnTimeInput = document.getElementById('turnTimeInput');
 const referenceRateInput = document.getElementById('referenceRateInput');
 const referenceRateHint = document.getElementById('referenceRateHint');
+const TEAM_CONFIG_STORAGE_KEY = 'fyqTetrisTeamConfig';
+const TEAM_CONFIG_VERSION = 2;
+const DEFAULT_REFERENCE_RATE = 0.5;
 
 function clampNumber(value, min, max, fallback) {
     const parsed = Number(value);
@@ -35,21 +38,23 @@ function formatReferenceCount(value) {
 
 function updateReferenceRateHint(turnSeconds, referenceRate) {
     const referenceCorrect = referenceRate * turnSeconds / 60;
-    referenceRateHint.textContent = `Con ${turnSeconds} s: ${formatReferenceCount(referenceCorrect)} aciertos propios equivalen a 9,5.`;
+    const countLabel = referenceCorrect === 1 ? 'acierto propio equivale' : 'aciertos propios equivalen';
+    referenceRateHint.textContent = `Con ${turnSeconds} s: ${formatReferenceCount(referenceCorrect)} ${countLabel} a 9,5.`;
 }
 
 function getTeamConfig() {
     const config = {
         teamCount: clampNumber(teamCountInput.value, 2, 8, 4),
         turnSeconds: clampNumber(turnTimeInput.value, 30, 600, 120),
-        referenceRate: clampDecimal(referenceRateInput.value, 0.1, 10, 3)
+        referenceRate: clampDecimal(referenceRateInput.value, 0.1, 10, DEFAULT_REFERENCE_RATE),
+        configVersion: TEAM_CONFIG_VERSION
     };
     teamCountInput.value = config.teamCount;
     turnTimeInput.value = config.turnSeconds;
     referenceRateInput.value = config.referenceRate;
     updateReferenceRateHint(config.turnSeconds, config.referenceRate);
     try {
-        localStorage.setItem('fyqTetrisTeamConfig', JSON.stringify(config));
+        localStorage.setItem(TEAM_CONFIG_STORAGE_KEY, JSON.stringify(config));
     } catch (error) {
         // La configuración seguirá funcionando aunque el navegador bloquee el almacenamiento.
     }
@@ -57,11 +62,16 @@ function getTeamConfig() {
 }
 
 try {
-    const savedConfig = JSON.parse(localStorage.getItem('fyqTetrisTeamConfig'));
+    const savedConfig = JSON.parse(localStorage.getItem(TEAM_CONFIG_STORAGE_KEY));
     if (savedConfig) {
         teamCountInput.value = clampNumber(savedConfig.teamCount, 2, 8, 4);
         turnTimeInput.value = clampNumber(savedConfig.turnSeconds, 30, 600, 120);
-        referenceRateInput.value = clampDecimal(savedConfig.referenceRate, 0.1, 10, 3);
+        const legacyRate = Number(savedConfig.referenceRate);
+        const savedReferenceRate = savedConfig.configVersion === TEAM_CONFIG_VERSION
+            || (Number.isFinite(legacyRate) && legacyRate !== 3)
+            ? savedConfig.referenceRate
+            : DEFAULT_REFERENCE_RATE;
+        referenceRateInput.value = clampDecimal(savedReferenceRate, 0.1, 10, DEFAULT_REFERENCE_RATE);
     }
 } catch (error) {
     // Se mantienen los valores iniciales del formulario.
@@ -633,7 +643,7 @@ class TetrisGame {
         this.teams = [];
         this.activeTeamIndex = 0;
         this.turnDurationMs = 120000;
-        this.referenceRatePerMinute = 3;
+        this.referenceRatePerMinute = DEFAULT_REFERENCE_RATE;
         this.turnRemainingMs = this.turnDurationMs;
         this.turnClockInterval = null;
         this.lastTurnClockTick = null;
@@ -1467,7 +1477,7 @@ class TetrisGame {
         this.clearTransientEffects();
         const teamCount = Math.min(8, Math.max(2, Number(config.teamCount) || 4));
         const turnSeconds = Math.min(600, Math.max(30, Number(config.turnSeconds) || 120));
-        const referenceRate = Math.min(10, Math.max(0.1, Number(config.referenceRate) || 3));
+        const referenceRate = Math.min(10, Math.max(0.1, Number(config.referenceRate) || DEFAULT_REFERENCE_RATE));
         this.teams = Array.from({ length: teamCount }, (_, index) => ({
             label: String.fromCharCode(65 + index),
             score: 0,

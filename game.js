@@ -11,6 +11,7 @@ const playTetrisBtn = document.getElementById('playTetris');
 const playPacmanBtn = document.getElementById('playPacman');
 const backToMenuBtn = document.getElementById('backToMenu');
 const gameTitle = document.getElementById('gameTitle');
+const challengeNow = document.getElementById('challengeNow');
 
 // ============================================================================
 // SHARED MUSIC SYSTEM
@@ -150,6 +151,18 @@ class GameMusic {
         oscillator.stop(now + 0.06);
     }
 
+    playFeedback(isCorrect) {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.audioContext) return;
+
+        const now = this.audioContext.currentTime;
+        const notes = isCorrect ? [523, 659, 784] : [330, 247];
+        notes.forEach((note, index) => {
+            this.playNote(note, now + index * 0.1, 0.18, isCorrect ? 'sine' : 'sawtooth', 0.22);
+        });
+    }
+
     start() {
         // Don't start music for Pac-Man
         if (currentGame === 'pacman') return;
@@ -238,227 +251,167 @@ function startMusicOnInteraction() {
 }
 
 // ============================================================================
-// SHARED MATH QUESTION SYSTEM
+// SHARED PHYSICS & CHEMISTRY QUESTION SYSTEM
 // ============================================================================
 
 const questionModal = document.getElementById('questionModal');
 const questionText = document.getElementById('questionText');
-const numeratorInput = document.getElementById('numeratorInput');
-const denominatorInput = document.getElementById('denominatorInput');
-const attemptsText = document.getElementById('attemptsText');
-const submitAnswer = document.getElementById('submitAnswer');
+const questionKind = document.getElementById('questionKind');
+const questionLevel = document.getElementById('questionLevel');
+const answerChoices = document.getElementById('answerChoices');
+const feedbackPanel = document.getElementById('feedbackPanel');
+const feedbackTitle = document.getElementById('feedbackTitle');
+const correctAnswerText = document.getElementById('correctAnswerText');
+const explanationText = document.getElementById('explanationText');
+const ruleText = document.getElementById('ruleText');
+const continueChallenge = document.getElementById('continueChallenge');
 
-class Fraction {
-    constructor(numerator, denominator) {
-        this.numerator = numerator;
-        this.denominator = denominator;
+const activeBank = QUESTION_BANKS.formulacion_binaria;
+let activeChallengeGame = null;
+let challengeResolved = false;
+
+class CurriculumQuestionGenerator {
+    constructor(bank) {
+        this.bank = bank;
+        this.seen = new Set();
     }
 
-    simplify() {
-        const g = this.gcd(Math.abs(this.numerator), Math.abs(this.denominator));
-        const sign = (this.numerator < 0) !== (this.denominator < 0) ? -1 : 1;
-        return new Fraction(
-            sign * Math.abs(this.numerator) / g,
-            Math.abs(this.denominator) / g
+    generateQuestion(answeredCount) {
+        const curriculumLevel = Math.min(4, 1 + Math.floor(answeredCount / 3));
+        let available = this.bank.questions.filter(question =>
+            question.level <= curriculumLevel && !this.seen.has(question.id)
         );
-    }
 
-    gcd(a, b) {
-        return b === 0 ? a : this.gcd(b, a % b);
-    }
+        if (available.length === 0) {
+            this.seen.clear();
+            available = this.bank.questions.filter(question => question.level <= curriculumLevel);
+        }
 
-    toString() {
-        return `${this.numerator}/${this.denominator}`;
-    }
-}
+        const source = available[Math.floor(Math.random() * available.length)];
+        this.seen.add(source.id);
 
-class FractionQuestionGenerator {
-    generateQuestion(level) {
-        let difficulty;
-        if (level === 1) difficulty = 'EASY';
-        else if (level <= 3) difficulty = 'MEDIUM';
-        else if (level <= 5) difficulty = 'HARD';
-        else difficulty = 'EXPERT';
-
-        const operation = this.selectOperation(difficulty);
-        const [fraction1, fraction2] = this.generateFractions(difficulty, operation);
-        const answer = this.calculateAnswer(fraction1, fraction2, operation);
-
+        const options = this.shuffle([...source.options]);
         return {
-            fraction1,
-            fraction2,
-            operation,
-            correctAnswer: answer,
-            getQuestionText: function() {
-                const symbols = { ADD: '+', SUBTRACT: '-', MULTIPLY: '×', DIVIDE: '÷' };
-                return `${this.fraction1.numerator}/${this.fraction1.denominator} ${symbols[this.operation]} ${this.fraction2.numerator}/${this.fraction2.denominator} = ?`;
-            },
-            checkAnswer: function(num, den) {
-                if (den === 0) return false;
-                const userAnswer = new Fraction(num, den).simplify();
-                const correct = this.correctAnswer.simplify();
-                return userAnswer.numerator === correct.numerator &&
-                       userAnswer.denominator === correct.denominator;
-            }
+            ...source,
+            options,
+            correctIndex: options.indexOf(source.correct)
         };
     }
 
-    selectOperation(difficulty) {
-        if (difficulty === 'EASY') {
-            return Math.random() < 0.5 ? 'ADD' : 'SUBTRACT';
-        } else if (difficulty === 'MEDIUM') {
-            const r = Math.floor(Math.random() * 3);
-            return ['ADD', 'SUBTRACT', 'MULTIPLY'][r];
-        } else {
-            const ops = ['ADD', 'SUBTRACT', 'MULTIPLY', 'DIVIDE'];
-            return ops[Math.floor(Math.random() * ops.length)];
-        }
+    reset() {
+        this.seen.clear();
     }
 
-    generateFractions(difficulty, operation) {
-        switch (difficulty) {
-            case 'EASY': return this.generateEasyFractions(operation);
-            case 'MEDIUM': return this.generateMediumFractions(operation);
-            case 'HARD': return this.generateHardFractions(operation);
-            case 'EXPERT': return this.generateExpertFractions(operation);
-            default: return this.generateEasyFractions(operation);
+    shuffle(items) {
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
         }
-    }
-
-    generateEasyFractions(operation) {
-        // Allow different but related denominators (e.g., 2 and 4, 3 and 6)
-        const denomPairs = [
-            [2, 4], [3, 6], [2, 6], [4, 8], [3, 9],
-            [5, 10], [2, 8], [3, 12], [4, 12], [6, 12]
-        ];
-        const pair = denomPairs[Math.floor(Math.random() * denomPairs.length)];
-
-        // Randomly assign which denominator goes to which fraction
-        const [denom1, denom2] = Math.random() < 0.5 ? pair : [pair[1], pair[0]];
-
-        // Generate numerators (can be larger now)
-        let num1 = Math.floor(Math.random() * Math.min(denom1, 8)) + 1;
-        let num2 = Math.floor(Math.random() * Math.min(denom2, 8)) + 1;
-
-        // For subtraction, ensure first fraction is larger
-        if (operation === 'SUBTRACT') {
-            const val1 = num1 / denom1;
-            const val2 = num2 / denom2;
-            if (val1 < val2) {
-                // Swap to make first fraction larger
-                [num1, num2] = [num2, num1];
-            }
-        }
-
-        return [new Fraction(num1, denom1), new Fraction(num2, denom2)];
-    }
-
-    generateMediumFractions(operation) {
-        if (operation === 'ADD' || operation === 'SUBTRACT') {
-            const baseDenoms = [2, 3, 4, 5, 6];
-            const baseDenom = baseDenoms[Math.floor(Math.random() * baseDenoms.length)];
-            const denom1 = baseDenom;
-            const denom2 = Math.random() < 0.5 ? baseDenom : baseDenom * 2;
-
-            let num1 = Math.floor(Math.random() * denom1) + 1;
-            let num2 = Math.floor(Math.random() * denom2) + 1;
-
-            if (operation === 'SUBTRACT') {
-                const val1 = num1 / denom1;
-                const val2 = num2 / denom2;
-                if (val1 < val2) {
-                    num2 = Math.floor(Math.random() * Math.max(1, Math.floor(val1 * denom2))) + 1;
-                }
-            }
-
-            return [new Fraction(num1, denom1), new Fraction(num2, denom2)];
-        } else {
-            const denoms = [2, 3, 4, 5];
-            const denom1 = denoms[Math.floor(Math.random() * denoms.length)];
-            const denom2 = denoms[Math.floor(Math.random() * denoms.length)];
-            const num1 = Math.floor(Math.random() * denom1) + 1;
-            const num2 = Math.floor(Math.random() * denom2) + 1;
-
-            return [new Fraction(num1, denom1), new Fraction(num2, denom2)];
-        }
-    }
-
-    generateHardFractions(operation) {
-        let denom1 = Math.floor(Math.random() * 8) + 2;
-        let denom2 = Math.floor(Math.random() * 8) + 2;
-        let num1 = Math.floor(Math.random() * 9) + 1;
-        let num2 = Math.floor(Math.random() * 9) + 1;
-
-        if (operation === 'SUBTRACT') {
-            const val1 = num1 / denom1;
-            const val2 = num2 / denom2;
-            if (val1 < val2) {
-                return [new Fraction(num2, denom2), new Fraction(num1, denom1)];
-            }
-        }
-
-        return [new Fraction(num1, denom1), new Fraction(num2, denom2)];
-    }
-
-    generateExpertFractions(operation) {
-        let denom1 = Math.floor(Math.random() * 11) + 2;
-        let denom2 = Math.floor(Math.random() * 11) + 2;
-        let num1 = Math.floor(Math.random() * 12) + 1;
-        let num2 = Math.floor(Math.random() * 12) + 1;
-
-        if (operation === 'SUBTRACT') {
-            const val1 = num1 / denom1;
-            const val2 = num2 / denom2;
-            if (val1 < val2) {
-                return [new Fraction(num2, denom2), new Fraction(num1, denom1)];
-            }
-        }
-
-        return [new Fraction(num1, denom1), new Fraction(num2, denom2)];
-    }
-
-    calculateAnswer(f1, f2, operation) {
-        let numerator, denominator;
-
-        switch (operation) {
-            case 'ADD':
-                numerator = f1.numerator * f2.denominator + f2.numerator * f1.denominator;
-                denominator = f1.denominator * f2.denominator;
-                break;
-            case 'SUBTRACT':
-                numerator = f1.numerator * f2.denominator - f2.numerator * f1.denominator;
-                denominator = f1.denominator * f2.denominator;
-                break;
-            case 'MULTIPLY':
-                numerator = f1.numerator * f2.numerator;
-                denominator = f1.denominator * f2.denominator;
-                break;
-            case 'DIVIDE':
-                numerator = f1.numerator * f2.denominator;
-                denominator = f1.denominator * f2.numerator;
-                break;
-        }
-
-        return new Fraction(numerator, denominator);
+        return items;
     }
 }
 
-const questionGenerator = new FractionQuestionGenerator();
+const questionGenerator = new CurriculumQuestionGenerator(activeBank);
 
-// Submit answer handlers
-numeratorInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        if (numeratorInput.value) {
-            denominatorInput.focus();
-        }
+function openChemistryChallenge(game) {
+    activeChallengeGame = game;
+    challengeResolved = false;
+    game.showQuestion = true;
+    game.isPaused = true;
+    game.currentQuestion = questionGenerator.generateQuestion(game.chemistryAnswered);
+
+    questionKind.textContent = game.currentQuestion.kind;
+    questionLevel.textContent = `Nivel ${game.currentQuestion.level}`;
+    questionText.textContent = game.currentQuestion.prompt;
+    feedbackPanel.classList.add('hidden');
+    feedbackPanel.classList.remove('is-wrong');
+    continueChallenge.classList.add('hidden');
+    answerChoices.replaceChildren();
+
+    game.currentQuestion.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'answer-choice';
+        button.dataset.index = index;
+
+        const letter = document.createElement('span');
+        letter.className = 'answer-letter';
+        letter.textContent = String.fromCharCode(65 + index);
+
+        const answer = document.createElement('span');
+        answer.textContent = option;
+        button.append(letter, answer);
+        button.addEventListener('click', () => resolveChemistryChallenge(index));
+        answerChoices.appendChild(button);
+    });
+
+    questionModal.classList.remove('hidden');
+    challengeNow.disabled = true;
+    answerChoices.querySelector('button')?.focus();
+    gameMusic.pause();
+}
+
+function resolveChemistryChallenge(selectedIndex) {
+    if (!activeChallengeGame || challengeResolved) return;
+
+    challengeResolved = true;
+    const game = activeChallengeGame;
+    const question = game.currentQuestion;
+    const isCorrect = selectedIndex === question.correctIndex;
+    game.chemistryAnswered++;
+    if (isCorrect) game.chemistryCorrect++;
+
+    [...answerChoices.children].forEach((button, index) => {
+        button.disabled = true;
+        if (index === question.correctIndex) button.classList.add('correct');
+        if (index === selectedIndex && !isCorrect) button.classList.add('wrong');
+    });
+
+    feedbackTitle.textContent = isCorrect ? '¡Correcto!' : 'No exactamente. Comprueba la regla:';
+    correctAnswerText.textContent = question.correct;
+    explanationText.textContent = question.solution;
+    ruleText.textContent = question.rule;
+    feedbackPanel.classList.toggle('is-wrong', !isCorrect);
+    feedbackPanel.classList.remove('hidden');
+    continueChallenge.classList.remove('hidden');
+    game.updateDisplay();
+    gameMusic.playFeedback(isCorrect);
+    continueChallenge.focus();
+}
+
+function closeChemistryChallenge() {
+    if (!activeChallengeGame || !challengeResolved) return;
+
+    const game = activeChallengeGame;
+    game.showQuestion = false;
+    game.isPaused = false;
+    game.currentQuestion = null;
+    questionModal.classList.add('hidden');
+    challengeNow.disabled = false;
+    activeChallengeGame = null;
+    challengeResolved = false;
+    gameMusic.resume();
+}
+
+continueChallenge.addEventListener('click', closeChemistryChallenge);
+
+document.addEventListener('keydown', (event) => {
+    if (questionModal.classList.contains('hidden')) return;
+
+    if (challengeResolved && event.key === 'Enter') {
+        event.preventDefault();
+        closeChemistryChallenge();
+        return;
     }
-});
 
-denominatorInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        submitAnswer.click();
+    const key = event.key.toUpperCase();
+    const answerIndex = ['1', '2', '3', '4'].indexOf(event.key) >= 0
+        ? Number(event.key) - 1
+        : ['A', 'B', 'C', 'D'].indexOf(key);
+
+    if (!challengeResolved && answerIndex >= 0) {
+        event.preventDefault();
+        resolveChemistryChallenge(answerIndex);
     }
 });
 
@@ -499,7 +452,8 @@ class TetrisGame {
         this.isGameOver = false;
         this.isPaused = false;
         this.showQuestion = false;
-        this.attemptsRemaining = 3;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
         this.currentQuestion = null;
         this.gameLoop = null;
 
@@ -513,10 +467,11 @@ class TetrisGame {
         this.scoreDisplay = document.getElementById('scoreDisplay');
         this.levelDisplay = document.getElementById('levelDisplay');
         this.rowsDisplay = document.getElementById('rowsDisplay');
-        this.attemptsDisplay = document.getElementById('attemptsDisplay');
+        this.chemistryScoreDisplay = document.getElementById('chemistryScoreDisplay');
         this.pauseOverlay = document.getElementById('pauseOverlay');
         this.gameOverOverlay = document.getElementById('gameOverOverlay');
         this.finalScore = document.getElementById('finalScore');
+        this.finalChemistryScore = document.getElementById('finalChemistryScore');
         this.restartButton = document.getElementById('restartButton');
 
         // Controls
@@ -572,8 +527,6 @@ class TetrisGame {
 
         // Canvas touch/click controls
         this.setupCanvasControls();
-
-        submitAnswer.addEventListener('click', () => this.submitAnswerHandler());
     }
 
     setupCanvasControls() {
@@ -828,6 +781,7 @@ class TetrisGame {
         if (this.isGameOver || this.showQuestion) return;
         this.isPaused = !this.isPaused;
         this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
+        this.pauseBtn.textContent = this.isPaused ? 'Continuar' : 'Pausa';
 
         if (this.isPaused) {
             gameMusic.pause();
@@ -840,56 +794,13 @@ class TetrisGame {
         this.isGameOver = true;
         clearTimeout(this.gameLoop);
         this.finalScore.textContent = this.score;
+        this.finalChemistryScore.textContent = this.formatChemistryScore(true);
         this.gameOverOverlay.classList.remove('hidden');
         gameMusic.pause();
     }
 
     showQuestionModal() {
-        this.showQuestion = true;
-        this.isPaused = true;
-        this.currentQuestion = questionGenerator.generateQuestion(this.level);
-        questionText.textContent = this.currentQuestion.getQuestionText();
-        attemptsText.textContent = `Attempts remaining: ${this.attemptsRemaining}`;
-        numeratorInput.value = '';
-        denominatorInput.value = '';
-        questionModal.classList.remove('hidden');
-        numeratorInput.focus();
-        gameMusic.pause();
-    }
-
-    hideQuestionModal() {
-        this.showQuestion = false;
-        this.isPaused = false;
-        this.currentQuestion = null;
-        questionModal.classList.add('hidden');
-        gameMusic.resume();
-    }
-
-    submitAnswerHandler() {
-        const num = parseInt(numeratorInput.value);
-        const den = parseInt(denominatorInput.value);
-
-        if (isNaN(num) || isNaN(den) || den === 0) {
-            attemptsText.textContent = 'Please enter valid numbers (denominator cannot be 0)';
-            return;
-        }
-
-        if (this.currentQuestion.checkAnswer(num, den)) {
-            this.attemptsRemaining = 3;
-            this.hideQuestionModal();
-        } else {
-            this.attemptsRemaining--;
-            if (this.attemptsRemaining <= 0) {
-                this.hideQuestionModal();
-                this.restart();
-            } else {
-                attemptsText.textContent = `Wrong! Attempts remaining: ${this.attemptsRemaining}`;
-                numeratorInput.value = '';
-                denominatorInput.value = '';
-                numeratorInput.focus();
-            }
-        }
-        this.updateDisplay();
+        openChemistryChallenge(this);
     }
 
     restart() {
@@ -904,12 +815,14 @@ class TetrisGame {
         this.isGameOver = false;
         this.isPaused = false;
         this.showQuestion = false;
-        this.attemptsRemaining = 3;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
         this.currentQuestion = null;
 
         this.gameOverOverlay.classList.add('hidden');
         this.pauseOverlay.classList.add('hidden');
         questionModal.classList.add('hidden');
+        this.pauseBtn.textContent = 'Pausa';
 
         this.updateDisplay();
         this.drawNextPiece();
@@ -921,7 +834,14 @@ class TetrisGame {
         this.scoreDisplay.textContent = this.score;
         this.levelDisplay.textContent = this.level;
         this.rowsDisplay.textContent = this.rowsCleared;
-        this.attemptsDisplay.textContent = this.attemptsRemaining;
+        this.chemistryScoreDisplay.textContent = this.formatChemistryScore(false);
+    }
+
+    formatChemistryScore(includePercent) {
+        const base = `${this.chemistryCorrect}/${this.chemistryAnswered}`;
+        if (!includePercent || this.chemistryAnswered === 0) return base;
+        const percent = Math.round(this.chemistryCorrect / this.chemistryAnswered * 100);
+        return `${base} (${percent} %)`;
     }
 
     draw() {
@@ -1067,10 +987,24 @@ class TetrisGame {
     }
 
     start() {
+        clearTimeout(this.gameLoop);
         this.initBoard();
         this.currentPiece = this.randomTetromino();
         this.nextPiece = this.randomTetromino();
         this.currentPosition = { row: 0, col: Math.floor(BOARD_WIDTH / 2) - 1 };
+        this.score = 0;
+        this.rowsCleared = 0;
+        this.rowsSinceLastQuestion = 0;
+        this.level = 1;
+        this.isGameOver = false;
+        this.isPaused = false;
+        this.showQuestion = false;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
+        this.currentQuestion = null;
+        this.gameOverOverlay.classList.add('hidden');
+        this.pauseOverlay.classList.add('hidden');
+        this.pauseBtn.textContent = 'Pausa';
         this.updateDisplay();
         this.drawNextPiece();
         this.draw();
@@ -1138,7 +1072,8 @@ class PacManGame {
         this.score = 0;
         this.level = 1;
         this.lives = 3;
-        this.attemptsRemaining = 3;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
         this.isPaused = false;
         this.isGameOver = false;
         this.showQuestion = false;
@@ -1147,7 +1082,7 @@ class PacManGame {
 
         this.totalDots = 0;
         this.dotsEaten = 0;
-        this.lastMathBreak = 0; // Track progress for math breaks
+        this.lastMathBreak = 0; // Track progress for curriculum breaks
         this.lastDotEaten = null; // Track last dot eaten to prevent duplicate sounds
 
         this.powerMode = false;
@@ -1158,10 +1093,11 @@ class PacManGame {
         this.scoreDisplay = document.getElementById('pacmanScoreDisplay');
         this.levelDisplay = document.getElementById('pacmanLevelDisplay');
         this.livesDisplay = document.getElementById('livesDisplay');
-        this.attemptsDisplay = document.getElementById('pacmanAttemptsDisplay');
+        this.chemistryScoreDisplay = document.getElementById('pacmanChemistryScoreDisplay');
         this.pauseOverlay = document.getElementById('pacmanPauseOverlay');
         this.gameOverOverlay = document.getElementById('pacmanGameOverOverlay');
         this.finalScore = document.getElementById('pacmanFinalScore');
+        this.finalChemistryScore = document.getElementById('pacmanFinalChemistryScore');
         this.restartButton = document.getElementById('pacmanRestartButton');
 
         // Controls
@@ -1211,8 +1147,6 @@ class PacManGame {
 
         // Canvas touch/click controls
         this.setupCanvasControls();
-
-        submitAnswer.addEventListener('click', () => this.submitAnswerHandler());
     }
 
     setupCanvasControls() {
@@ -1828,6 +1762,7 @@ class PacManGame {
         if (this.isGameOver || this.showQuestion) return;
         this.isPaused = !this.isPaused;
         this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
+        this.pauseBtn.textContent = this.isPaused ? 'Continuar' : 'Pausa';
 
         if (this.isPaused) {
             gameMusic.pause();
@@ -1840,56 +1775,13 @@ class PacManGame {
         this.isGameOver = true;
         clearTimeout(this.gameLoop);
         this.finalScore.textContent = this.score;
+        this.finalChemistryScore.textContent = this.formatChemistryScore(true);
         this.gameOverOverlay.classList.remove('hidden');
         gameMusic.pause();
     }
 
     showQuestionModal() {
-        this.showQuestion = true;
-        this.isPaused = true;
-        this.currentQuestion = questionGenerator.generateQuestion(this.level);
-        questionText.textContent = this.currentQuestion.getQuestionText();
-        attemptsText.textContent = `Attempts remaining: ${this.attemptsRemaining}`;
-        numeratorInput.value = '';
-        denominatorInput.value = '';
-        questionModal.classList.remove('hidden');
-        numeratorInput.focus();
-        gameMusic.pause();
-    }
-
-    hideQuestionModal() {
-        this.showQuestion = false;
-        this.isPaused = false;
-        this.currentQuestion = null;
-        questionModal.classList.add('hidden');
-        gameMusic.resume();
-    }
-
-    submitAnswerHandler() {
-        const num = parseInt(numeratorInput.value);
-        const den = parseInt(denominatorInput.value);
-
-        if (isNaN(num) || isNaN(den) || den === 0) {
-            attemptsText.textContent = 'Please enter valid numbers (denominator cannot be 0)';
-            return;
-        }
-
-        if (this.currentQuestion.checkAnswer(num, den)) {
-            this.attemptsRemaining = 3;
-            this.hideQuestionModal();
-        } else {
-            this.attemptsRemaining--;
-            if (this.attemptsRemaining <= 0) {
-                this.hideQuestionModal();
-                this.restart();
-            } else {
-                attemptsText.textContent = `Wrong! Attempts remaining: ${this.attemptsRemaining}`;
-                numeratorInput.value = '';
-                denominatorInput.value = '';
-                numeratorInput.focus();
-            }
-        }
-        this.updateDisplay();
+        openChemistryChallenge(this);
     }
 
     restart() {
@@ -1899,7 +1791,8 @@ class PacManGame {
         this.score = 0;
         this.level = 1;
         this.lives = 3;
-        this.attemptsRemaining = 3;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
         this.isPaused = false;
         this.isGameOver = false;
         this.showQuestion = false;
@@ -1910,6 +1803,7 @@ class PacManGame {
         this.gameOverOverlay.classList.add('hidden');
         this.pauseOverlay.classList.add('hidden');
         questionModal.classList.add('hidden');
+        this.pauseBtn.textContent = 'Pausa';
 
         this.updateDisplay();
         gameMusic.resume();
@@ -1920,7 +1814,14 @@ class PacManGame {
         this.scoreDisplay.textContent = this.score;
         this.levelDisplay.textContent = this.level;
         this.livesDisplay.textContent = this.lives;
-        this.attemptsDisplay.textContent = this.attemptsRemaining;
+        this.chemistryScoreDisplay.textContent = this.formatChemistryScore(false);
+    }
+
+    formatChemistryScore(includePercent) {
+        const base = `${this.chemistryCorrect}/${this.chemistryAnswered}`;
+        if (!includePercent || this.chemistryAnswered === 0) return base;
+        const percent = Math.round(this.chemistryCorrect / this.chemistryAnswered * 100);
+        return `${base} (${percent} %)`;
     }
 
     startGameLoop() {
@@ -1939,6 +1840,7 @@ class PacManGame {
     }
 
     start() {
+        clearTimeout(this.gameLoop);
         this.initMaze();
         this.initGhosts();
 
@@ -1947,8 +1849,15 @@ class PacManGame {
         this.score = 0;
         this.level = 1;
         this.lives = 3;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
         this.isPaused = false;
         this.isGameOver = false;
+        this.showQuestion = false;
+        this.currentQuestion = null;
+        this.gameOverOverlay.classList.add('hidden');
+        this.pauseOverlay.classList.add('hidden');
+        this.pauseBtn.textContent = 'Pausa';
 
         this.updateDisplay();
         this.draw();
@@ -1969,6 +1878,12 @@ class PacManGame {
 let tetrisGame = null;
 let pacmanGame = null;
 
+challengeNow.addEventListener('click', () => {
+    const game = currentGame === 'tetris' ? tetrisGame : pacmanGame;
+    if (!game || game.isPaused || game.isGameOver || game.showQuestion) return;
+    game.showQuestionModal();
+});
+
 playTetrisBtn.addEventListener('click', () => {
     startMusicOnInteraction();
     startGame('tetris');
@@ -1987,9 +1902,10 @@ function startGame(gameType) {
     currentGame = gameType;
     gameMenu.classList.add('hidden');
     gameContainer.classList.remove('hidden');
+    challengeNow.disabled = false;
 
     if (gameType === 'tetris') {
-        gameTitle.textContent = 'Learn Math with Tetris';
+        gameTitle.textContent = 'Tetris químico · Formulación binaria';
         document.getElementById('tetrisGame').classList.remove('hidden');
         document.getElementById('tetrisControls').classList.remove('hidden');
         document.getElementById('pacmanGame').classList.add('hidden');
@@ -2002,7 +1918,7 @@ function startGame(gameType) {
         if (!tetrisGame) tetrisGame = new TetrisGame();
         tetrisGame.start();
     } else {
-        gameTitle.textContent = 'Learn Math with Pac-Man';
+        gameTitle.textContent = 'Laberinto químico · Formulación binaria';
         document.getElementById('tetrisGame').classList.add('hidden');
         document.getElementById('tetrisControls').classList.add('hidden');
         document.getElementById('pacmanGame').classList.remove('hidden');
@@ -2029,4 +1945,7 @@ function returnToMenu() {
     document.getElementById('pacmanPauseOverlay').classList.add('hidden');
     document.getElementById('pacmanGameOverOverlay').classList.add('hidden');
     questionModal.classList.add('hidden');
+    challengeNow.disabled = false;
+    activeChallengeGame = null;
+    challengeResolved = false;
 }

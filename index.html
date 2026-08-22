@@ -1,38 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Learn Math with Tetris</title>
-    <link rel="stylesheet" href="style.css?v=6">
+    <meta name="description" content="Arcade educativo de Física y Química con retos de formulación y feedback inmediato.">
+    <title>Física y Química Arcade</title>
+    <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
     <!-- Game Selection Menu -->
     <div id="gameMenu" class="menu-container">
-        <h1 class="menu-title">Learn Math with Games!</h1>
+        <p class="menu-eyebrow">LABORATORIO ARCADE · 3.º ESO</p>
+        <h1 class="menu-title">Física y Química Arcade</h1>
+        <p class="menu-subtitle">Juega, decide y comprueba la regla química al instante.</p>
+        <div class="content-card" aria-label="Contenido activo">
+            <span class="content-label">CONTENIDO ACTIVO</span>
+            <strong>Formulación de compuestos binarios</strong>
+            <small>32 retos · dificultad progresiva · solución razonada</small>
+        </div>
         <div class="menu-buttons">
             <button id="playTetris" class="menu-btn tetris-btn">
-                <span class="btn-icon">🎮</span>
-                <span class="btn-text">Play Tetris</span>
+                <span class="btn-icon" aria-hidden="true">▦</span>
+                <span class="btn-copy">
+                    <span class="btn-text">Tetris químico</span>
+                    <small>Un reto cada dos líneas</small>
+                </span>
             </button>
             <button id="playPacman" class="menu-btn pacman-btn">
-                <span class="btn-icon">👻</span>
-                <span class="btn-text">Play Pac-Man</span>
+                <span class="btn-icon" aria-hidden="true">●</span>
+                <span class="btn-copy">
+                    <span class="btn-text">Laberinto químico</span>
+                    <small>Tres retos por nivel</small>
+                </span>
             </button>
         </div>
+        <p class="menu-hint">La partida se pausa al aparecer un reto. Tras responder, lee la explicación antes de continuar.</p>
     </div>
 
     <div class="game-container hidden" id="gameContainer">
         <div class="header">
             <div class="header-row">
-                <button id="backToMenu" class="back-btn">← Menu</button>
-                <h1 id="gameTitle">Learn Math with Tetris</h1>
-                <button id="soundToggle" class="sound-btn" title="Toggle Music">
-                    <span id="soundOn">&#9835; Music ON</span>
-                    <span id="soundOff" class="hidden">&#9835; Music OFF</span>
+                <button id="backToMenu" class="back-btn">← Inicio</button>
+                <h1 id="gameTitle">Tetris químico</h1>
+                <button id="challengeNow" class="challenge-now-btn" title="Lanzar un reto sin esperar al siguiente hito del juego">Reto ahora</button>
+                <button id="soundToggle" class="sound-btn" title="Activar o desactivar sonido">
+                    <span id="soundOn">&#9835; Sonido</span>
+                    <span id="soundOff" class="hidden">&#9835; Silencio</span>
                 </button>
             </div>
         </div>
@@ -40,7 +56,7 @@
         <div class="game-area" id="tetrisGame">
             <div class="side-panel left-panel">
                 <div class="info-box">
-                    <h3>Next</h3>
+                    <h3>Siguiente</h3>
                     <canvas id="nextPieceCanvas" width="100" height="100"></canvas>
                 </div>
             </div>
@@ -49,35 +65,36 @@
                 <canvas id="gameCanvas" width="300" height="600"></canvas>
                 <div id="pauseOverlay" class="overlay hidden">
                     <div class="overlay-content">
-                        <h2>PAUSED</h2>
-                        <p>Tap Pause to resume</p>
+                        <h2>PAUSA</h2>
+                        <p>Pulsa «Continuar» para reanudar.</p>
                     </div>
                 </div>
                 <div id="gameOverOverlay" class="overlay hidden">
                     <div class="overlay-content">
-                        <h2>GAME OVER</h2>
-                        <p>Score: <span id="finalScore">0</span></p>
-                        <button id="restartButton">Play Again</button>
+                        <h2>FIN DE PARTIDA</h2>
+                        <p>Puntos de juego: <span id="finalScore">0</span></p>
+                        <p>Formulación: <span id="finalChemistryScore">0/0</span></p>
+                        <button id="restartButton">Jugar otra vez</button>
                     </div>
                 </div>
             </div>
 
             <div class="side-panel right-panel">
                 <div class="info-box">
-                    <h3>Score</h3>
+                    <h3>Puntos</h3>
                     <p id="scoreDisplay">0</p>
                 </div>
                 <div class="info-box">
-                    <h3>Level</h3>
+                    <h3>Nivel</h3>
                     <p id="levelDisplay">1</p>
                 </div>
                 <div class="info-box">
-                    <h3>Rows</h3>
+                    <h3>Líneas</h3>
                     <p id="rowsDisplay">0</p>
                 </div>
-                <div class="info-box attempts-box">
-                    <h3>Attempts</h3>
-                    <p id="attemptsDisplay">3</p>
+                <div class="info-box chemistry-box">
+                    <h3>Formulación</h3>
+                    <p id="chemistryScoreDisplay">0/0</p>
                 </div>
             </div>
         </div>
@@ -86,7 +103,7 @@
         <div class="game-area hidden" id="pacmanGame">
             <div class="side-panel left-panel">
                 <div class="info-box">
-                    <h3>Lives</h3>
+                    <h3>Vidas</h3>
                     <p id="livesDisplay">3</p>
                 </div>
             </div>
@@ -95,31 +112,32 @@
                 <canvas id="pacmanCanvas" width="560" height="620"></canvas>
                 <div id="pacmanPauseOverlay" class="overlay hidden">
                     <div class="overlay-content">
-                        <h2>PAUSED</h2>
-                        <p>Tap Pause to resume</p>
+                        <h2>PAUSA</h2>
+                        <p>Pulsa «Continuar» para reanudar.</p>
                     </div>
                 </div>
                 <div id="pacmanGameOverOverlay" class="overlay hidden">
                     <div class="overlay-content">
-                        <h2>GAME OVER</h2>
-                        <p>Score: <span id="pacmanFinalScore">0</span></p>
-                        <button id="pacmanRestartButton">Play Again</button>
+                        <h2>FIN DE PARTIDA</h2>
+                        <p>Puntos de juego: <span id="pacmanFinalScore">0</span></p>
+                        <p>Formulación: <span id="pacmanFinalChemistryScore">0/0</span></p>
+                        <button id="pacmanRestartButton">Jugar otra vez</button>
                     </div>
                 </div>
             </div>
 
             <div class="side-panel right-panel">
                 <div class="info-box">
-                    <h3>Score</h3>
+                    <h3>Puntos</h3>
                     <p id="pacmanScoreDisplay">0</p>
                 </div>
                 <div class="info-box">
-                    <h3>Level</h3>
+                    <h3>Nivel</h3>
                     <p id="pacmanLevelDisplay">1</p>
                 </div>
-                <div class="info-box attempts-box">
-                    <h3>Attempts</h3>
-                    <p id="pacmanAttemptsDisplay">3</p>
+                <div class="info-box chemistry-box">
+                    <h3>Formulación</h3>
+                    <p id="pacmanChemistryScoreDisplay">0/0</p>
                 </div>
             </div>
         </div>
@@ -127,8 +145,8 @@
         <!-- Tetris Controls -->
         <div class="touch-controls" id="tetrisControls">
             <div class="control-row">
-                <button id="rotateBtn" class="control-btn">Rotate</button>
-                <button id="pauseBtn" class="control-btn pause-btn">Pause</button>
+                <button id="rotateBtn" class="control-btn">Girar</button>
+                <button id="pauseBtn" class="control-btn pause-btn">Pausa</button>
             </div>
             <div class="control-row">
                 <button id="leftBtn" class="control-btn direction-btn">&#9664;</button>
@@ -136,14 +154,14 @@
                 <button id="rightBtn" class="control-btn direction-btn">&#9654;</button>
             </div>
             <div class="control-row">
-                <button id="dropBtn" class="control-btn wide-btn">Drop</button>
+                <button id="dropBtn" class="control-btn wide-btn">Soltar</button>
             </div>
         </div>
 
         <!-- Pac-Man Controls -->
         <div class="touch-controls hidden" id="pacmanControls">
             <div class="control-row">
-                <button id="pacmanPauseBtn" class="control-btn pause-btn">Pause</button>
+                <button id="pacmanPauseBtn" class="control-btn pause-btn">Pausa</button>
             </div>
             <div class="control-row">
                 <button id="pacmanLeftBtn" class="control-btn direction-btn">&#9664;</button>
@@ -155,21 +173,28 @@
     </div>
 
     <div id="questionModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Math Challenge!</h2>
-            <p id="questionText" class="question-text"></p>
-            <div class="answer-input">
-                <div class="fraction-input">
-                    <input type="number" id="numeratorInput" placeholder="?" min="-99" max="99">
-                    <div class="fraction-line"></div>
-                    <input type="number" id="denominatorInput" placeholder="?" min="1" max="99">
+        <div class="modal-content chemistry-modal" role="dialog" aria-modal="true" aria-labelledby="challengeTitle">
+            <div class="challenge-heading">
+                <div>
+                    <p class="challenge-kicker">RETO DE FORMULACIÓN</p>
+                    <h2 id="challengeTitle">Compuestos binarios</h2>
                 </div>
+                <span id="questionLevel" class="level-badge">Nivel 1</span>
             </div>
-            <p id="attemptsText" class="attempts-text"></p>
-            <button id="submitAnswer" class="submit-btn">Submit Answer</button>
+            <p id="questionKind" class="question-kind">Nombre → fórmula</p>
+            <p id="questionText" class="question-text"></p>
+            <div id="answerChoices" class="answer-choices" aria-label="Opciones de respuesta"></div>
+            <div id="feedbackPanel" class="feedback-panel hidden" aria-live="polite">
+                <p id="feedbackTitle" class="feedback-title"></p>
+                <p class="correct-line">Respuesta: <strong id="correctAnswerText"></strong></p>
+                <p id="explanationText" class="explanation-text"></p>
+                <p id="ruleText" class="rule-text"></p>
+            </div>
+            <button id="continueChallenge" class="submit-btn hidden">Continuar partida</button>
         </div>
     </div>
 
-    <script src="game.js?v=8"></script>
+    <script src="question-banks.js?v=1"></script>
+    <script src="game.js?v=9"></script>
 </body>
 </html>

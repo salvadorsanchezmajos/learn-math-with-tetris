@@ -29,6 +29,8 @@ body {
     min-height: 100vh;
     width: min(94vw, 760px);
     padding: 28px 0;
+    max-height: 100vh;
+    overflow-y: auto;
 }
 
 .menu-eyebrow {
@@ -79,6 +81,59 @@ body {
 .content-card small,
 .menu-hint {
     color: #aebdd0;
+}
+
+.team-config {
+    display: grid;
+    grid-template-columns: minmax(250px, 1.5fr) repeat(2, minmax(150px, 0.75fr));
+    align-items: end;
+    gap: 14px;
+    width: min(100%, 700px);
+    padding: 16px 18px;
+    color: #f8fbff;
+    background: rgba(8, 21, 43, 0.74);
+    border: 1px solid rgba(126, 232, 250, 0.26);
+    border-radius: 14px;
+}
+
+.team-config h2 {
+    margin: 4px 0 5px;
+    font-size: 1.08rem;
+}
+
+.team-config p {
+    color: #aebdd0;
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+
+.team-config label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #d9e9f4;
+    font-size: 0.75rem;
+    font-weight: 750;
+}
+
+.team-config input {
+    width: 100%;
+    padding: 10px 11px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 212, 255, 0.45);
+    border-radius: 9px;
+    font: inherit;
+    font-size: 1rem;
+}
+
+.input-with-unit {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 7px;
+    color: #91a7bb;
+    font-size: 0.7rem;
 }
 
 .menu-hint {
@@ -265,6 +320,180 @@ body {
     min-height: 0;
 }
 
+#tetrisGame {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: min(100vw - 20px, 980px);
+}
+
+.team-hud {
+    position: relative;
+    flex: 1 0 100%;
+    width: 100%;
+    padding: 9px 12px 11px;
+    color: #f8fbff;
+    background: rgba(7, 18, 38, 0.88);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 12px;
+}
+
+.team-challenge-open .team-hud {
+    z-index: 1101;
+}
+
+.team-challenge-open .modal {
+    align-items: flex-start;
+    padding-top: clamp(190px, 24vh, 260px);
+}
+
+.turn-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.turn-status > div:first-child {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+}
+
+.turn-kicker {
+    color: #7ee8fa;
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+}
+
+#activeTeamLabel {
+    font-size: 1.05rem;
+}
+
+.turn-timer {
+    min-width: 82px;
+    padding: 5px 10px;
+    color: #08152b;
+    background: #ffe066;
+    border-radius: 9px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    font-size: 1.18rem;
+    font-weight: 900;
+    text-align: center;
+}
+
+.turn-timer.is-warning {
+    color: #fff;
+    background: #ef5350;
+    animation: timer-pulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes timer-pulse {
+    to { transform: scale(1.04); box-shadow: 0 0 16px rgba(239, 83, 80, 0.55); }
+}
+
+.team-scoreboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 7px;
+}
+
+.team-score-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 7px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid transparent;
+    border-radius: 9px;
+}
+
+.team-score-card.is-active {
+    background: rgba(0, 212, 255, 0.13);
+    border-color: #00d4ff;
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.22);
+}
+
+.team-score-card.is-rebound {
+    border-color: #ffe066;
+}
+
+.team-letter {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    color: #07162d;
+    background: #8beaff;
+    border-radius: 50%;
+    font-weight: 950;
+}
+
+.team-points {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 1rem;
+    font-weight: 900;
+}
+
+.team-points small {
+    color: #99aec2;
+    font-size: 0.58rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.award-point-btn {
+    min-width: 39px;
+    min-height: 32px;
+    padding: 5px;
+    color: #08213a;
+    background: #ffe066;
+    border: 0;
+    border-radius: 8px;
+    font-weight: 950;
+    cursor: pointer;
+}
+
+.award-point-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+.rebound-banner {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    color: #1b2104;
+    background: #ffe066;
+    border-radius: 8px;
+    font-size: 0.79rem;
+    font-weight: 850;
+    text-align: center;
+}
+
+.turn-overlay {
+    z-index: 9;
+}
+
+.turn-end-reason {
+    color: #ffe066;
+    font-size: 0.76rem !important;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+}
+
+.info-box small {
+    display: block;
+    margin-top: 4px;
+    color: #9cafc1;
+    font-size: 0.54rem;
+    line-height: 1.25;
+}
+
 .side-panel {
     display: flex;
     flex-direction: column;
@@ -361,6 +590,10 @@ body {
     max-height: 70vh;
     width: auto;
     height: auto;
+}
+
+#tetrisGame #gameCanvas {
+    max-height: 58vh;
 }
 
 #pacmanCanvas {
@@ -632,6 +865,16 @@ body {
     font-weight: 900;
 }
 
+.rebound-info {
+    margin: 9px 0 3px;
+    padding: 10px 12px;
+    color: #18213b;
+    background: #ffe066;
+    border-radius: 8px;
+    font-weight: 850;
+    line-height: 1.4;
+}
+
 .feedback-panel.is-wrong .feedback-title {
     color: #ffab91;
 }
@@ -701,6 +944,14 @@ body {
         gap: 10px;
     }
 
+    .team-config {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .team-config > div:first-child {
+        grid-column: 1 / -1;
+    }
+
     .side-panel {
         min-width: 80px;
         gap: 8px;
@@ -753,6 +1004,19 @@ body {
         gap: 6px;
     }
 
+    #tetrisGame {
+        flex-direction: row;
+    }
+
+    .team-hud {
+        order: 0;
+        padding: 7px;
+    }
+
+    .team-scoreboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .side-panel {
         flex-direction: row;
         flex-wrap: wrap;
@@ -789,6 +1053,14 @@ body {
 
     #gameCanvas {
         max-height: 52vh;
+    }
+
+    #tetrisGame #gameCanvas {
+        max-height: 43vh;
+    }
+
+    .team-challenge-open .modal {
+        padding-top: 235px;
     }
 
     #nextPieceCanvas {
@@ -969,6 +1241,11 @@ body {
 
     .menu-buttons {
         flex-direction: column;
+    }
+
+    .team-config {
+        grid-template-columns: 1fr 1fr;
+        padding: 13px;
     }
 
     .btn-icon {

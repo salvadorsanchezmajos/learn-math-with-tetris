@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Arcade educativo de Física y Química con retos de formulación y feedback inmediato.">
     <title>Física y Química Arcade</title>
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
     <!-- Game Selection Menu -->
@@ -21,6 +21,24 @@
             <strong>Formulación de compuestos binarios</strong>
             <small>32 retos · dificultad progresiva · solución razonada</small>
         </div>
+        <section class="team-config" aria-labelledby="teamConfigTitle">
+            <div>
+                <span class="content-label">TETRIS POR EQUIPOS</span>
+                <h2 id="teamConfigTitle">Configuración de la sesión</h2>
+                <p>Los marcadores empiezan a cero. El reloj cuenta solo mientras las piezas están en juego.</p>
+            </div>
+            <label>
+                <span>Número de equipos</span>
+                <input id="teamCountInput" type="number" min="2" max="8" step="1" value="4" inputmode="numeric">
+            </label>
+            <label>
+                <span>Tiempo por equipo</span>
+                <span class="input-with-unit">
+                    <input id="turnTimeInput" type="number" min="30" max="600" step="15" value="120" inputmode="numeric">
+                    <span>segundos</span>
+                </span>
+            </label>
+        </section>
         <div class="menu-buttons">
             <button id="playTetris" class="menu-btn tetris-btn">
                 <span class="btn-icon" aria-hidden="true">▦</span>
@@ -54,6 +72,18 @@
         </div>
 
         <div class="game-area" id="tetrisGame">
+            <section id="teamHud" class="team-hud" aria-label="Marcador de equipos">
+                <div class="turn-status">
+                    <div>
+                        <span class="turn-kicker">EN JUEGO</span>
+                        <strong id="activeTeamLabel">Equipo A</strong>
+                    </div>
+                    <div id="turnTimer" class="turn-timer" aria-label="Tiempo restante">02:00</div>
+                </div>
+                <div id="reboundBanner" class="rebound-banner hidden" aria-live="assertive"></div>
+                <div id="teamScoreboard" class="team-scoreboard"></div>
+            </section>
+
             <div class="side-panel left-panel">
                 <div class="info-box">
                     <h3>Siguiente</h3>
@@ -81,12 +111,20 @@
                         <button id="restartButton">Jugar otra vez</button>
                     </div>
                 </div>
+                <div id="turnOverlay" class="overlay turn-overlay hidden" aria-live="assertive">
+                    <div class="overlay-content">
+                        <p id="turnEndReason" class="turn-end-reason">TIEMPO AGOTADO</p>
+                        <h2 id="turnEndTitle">Fin del turno del equipo A</h2>
+                        <p id="nextTeamText">A continuación: equipo B</p>
+                    </div>
+                </div>
             </div>
 
             <div class="side-panel right-panel">
                 <div class="info-box">
-                    <h3>Puntos</h3>
+                    <h3>Puntos de juego</h3>
                     <p id="scoreDisplay">0</p>
+                    <small>No cuentan en el marcador</small>
                 </div>
                 <div class="info-box">
                     <h3>Nivel</h3>
@@ -97,7 +135,7 @@
                     <p id="rowsDisplay">0</p>
                 </div>
                 <div class="info-box chemistry-box">
-                    <h3>Formulación</h3>
+                    <h3>Retos del turno</h3>
                     <p id="chemistryScoreDisplay">0/0</p>
                 </div>
             </div>
@@ -190,15 +228,18 @@
             <div id="answerChoices" class="answer-choices" aria-label="Opciones de respuesta"></div>
             <div id="feedbackPanel" class="feedback-panel hidden" aria-live="polite">
                 <p id="feedbackTitle" class="feedback-title"></p>
-                <p class="correct-line">Respuesta: <strong id="correctAnswerText"></strong></p>
-                <p id="explanationText" class="explanation-text"></p>
-                <p id="ruleText" class="rule-text"></p>
+                <p id="reboundInfo" class="rebound-info hidden"></p>
+                <div id="solutionDetails">
+                    <p class="correct-line">Respuesta: <strong id="correctAnswerText"></strong></p>
+                    <p id="explanationText" class="explanation-text"></p>
+                    <p id="ruleText" class="rule-text"></p>
+                </div>
             </div>
             <button id="continueChallenge" class="submit-btn hidden">Continuar partida</button>
         </div>
     </div>
 
     <script src="question-banks.js?v=1"></script>
-    <script src="game.js?v=10"></script>
+    <script src="game.js?v=11"></script>
 </body>
 </html>

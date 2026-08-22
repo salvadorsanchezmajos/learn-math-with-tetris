@@ -12,6 +12,41 @@ const playPacmanBtn = document.getElementById('playPacman');
 const backToMenuBtn = document.getElementById('backToMenu');
 const gameTitle = document.getElementById('gameTitle');
 const challengeNow = document.getElementById('challengeNow');
+const teamCountInput = document.getElementById('teamCountInput');
+const turnTimeInput = document.getElementById('turnTimeInput');
+
+function clampNumber(value, min, max, fallback) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? Math.min(max, Math.max(min, Math.round(parsed))) : fallback;
+}
+
+function getTeamConfig() {
+    const config = {
+        teamCount: clampNumber(teamCountInput.value, 2, 8, 4),
+        turnSeconds: clampNumber(turnTimeInput.value, 30, 600, 120)
+    };
+    teamCountInput.value = config.teamCount;
+    turnTimeInput.value = config.turnSeconds;
+    try {
+        localStorage.setItem('fyqTetrisTeamConfig', JSON.stringify(config));
+    } catch (error) {
+        // La configuración seguirá funcionando aunque el navegador bloquee el almacenamiento.
+    }
+    return config;
+}
+
+try {
+    const savedConfig = JSON.parse(localStorage.getItem('fyqTetrisTeamConfig'));
+    if (savedConfig) {
+        teamCountInput.value = clampNumber(savedConfig.teamCount, 2, 8, 4);
+        turnTimeInput.value = clampNumber(savedConfig.turnSeconds, 30, 600, 120);
+    }
+} catch (error) {
+    // Se mantienen los valores iniciales del formulario.
+}
+
+teamCountInput.addEventListener('change', getTeamConfig);
+turnTimeInput.addEventListener('change', getTeamConfig);
 
 // ============================================================================
 // SHARED MUSIC SYSTEM
@@ -261,6 +296,8 @@ const questionLevel = document.getElementById('questionLevel');
 const answerChoices = document.getElementById('answerChoices');
 const feedbackPanel = document.getElementById('feedbackPanel');
 const feedbackTitle = document.getElementById('feedbackTitle');
+const reboundInfo = document.getElementById('reboundInfo');
+const solutionDetails = document.getElementById('solutionDetails');
 const correctAnswerText = document.getElementById('correctAnswerText');
 const explanationText = document.getElementById('explanationText');
 const ruleText = document.getElementById('ruleText');
@@ -269,6 +306,7 @@ const continueChallenge = document.getElementById('continueChallenge');
 const activeBank = QUESTION_BANKS.formulacion_binaria;
 let activeChallengeGame = null;
 let challengeResolved = false;
+let challengePhase = 'answering';
 
 class CurriculumQuestionGenerator {
     constructor(bank) {
@@ -316,6 +354,7 @@ const questionGenerator = new CurriculumQuestionGenerator(activeBank);
 function openChemistryChallenge(game) {
     activeChallengeGame = game;
     challengeResolved = false;
+    challengePhase = 'answering';
     game.showQuestion = true;
     game.isPaused = true;
     game.currentQuestion = questionGenerator.generateQuestion(game.chemistryAnswered);
@@ -325,7 +364,10 @@ function openChemistryChallenge(game) {
     questionText.textContent = game.currentQuestion.prompt;
     feedbackPanel.classList.add('hidden');
     feedbackPanel.classList.remove('is-wrong');
+    reboundInfo.classList.add('hidden');
+    solutionDetails.classList.remove('hidden');
     continueChallenge.classList.add('hidden');
+    continueChallenge.textContent = 'Continuar partida';
     answerChoices.replaceChildren();
 
     game.currentQuestion.options.forEach((option, index) => {
@@ -346,13 +388,14 @@ function openChemistryChallenge(game) {
     });
 
     questionModal.classList.remove('hidden');
+    document.body.classList.toggle('team-challenge-open', typeof game.openReboundRound === 'function');
     challengeNow.disabled = true;
     answerChoices.querySelector('button')?.focus();
     gameMusic.pause();
 }
 
 function resolveChemistryChallenge(selectedIndex) {
-    if (!activeChallengeGame || challengeResolved) return;
+    if (!activeChallengeGame || challengePhase !== 'answering') return;
 
     challengeResolved = true;
     const game = activeChallengeGame;
@@ -364,31 +407,83 @@ function resolveChemistryChallenge(selectedIndex) {
 
     [...answerChoices.children].forEach((button, index) => {
         button.disabled = true;
-        if (index === question.correctIndex) button.classList.add('correct');
         if (index === selectedIndex && !isCorrect) button.classList.add('wrong');
     });
 
-    feedbackTitle.textContent = isCorrect ? '¡Correcto!' : 'No exactamente. Comprueba la regla:';
+    game.updateDisplay();
+
+    if (isCorrect) {
+        if (typeof game.awardActiveTeamPoint === 'function') game.awardActiveTeamPoint();
+        const teamLabel = typeof game.getActiveTeamLabel === 'function' ? game.getActiveTeamLabel() : null;
+        revealChemistrySolution({
+            isCorrect: true,
+            title: teamLabel ? `¡Correcto! Un punto para el equipo ${teamLabel}.` : '¡Correcto!'
+        });
+        return;
+    }
+
+    gameMusic.playFeedback(false);
+    if (typeof game.openReboundRound === 'function') {
+        challengePhase = 'rebound';
+        const order = game.openReboundRound((winnerLabel) => {
+            revealChemistrySolution({
+                isCorrect: true,
+                title: `¡Rebote para el equipo ${winnerLabel}!`
+            });
+        });
+        feedbackTitle.textContent = 'Respuesta incorrecta: se abre el turno de rebotes.';
+        reboundInfo.textContent = `Orden de respuesta: ${order.join(' → ')}. Pulsa +1 junto al primer equipo que acierte.`;
+        feedbackPanel.classList.add('is-wrong');
+        feedbackPanel.classList.remove('hidden');
+        reboundInfo.classList.remove('hidden');
+        solutionDetails.classList.add('hidden');
+        continueChallenge.textContent = 'Nadie acierta: mostrar solución';
+        continueChallenge.classList.remove('hidden');
+        return;
+    }
+
+    revealChemistrySolution({
+        isCorrect: false,
+        title: 'No exactamente. Comprueba la regla:'
+    });
+}
+
+function revealChemistrySolution({ isCorrect, title }) {
+    if (!activeChallengeGame) return;
+
+    challengePhase = 'solution';
+    const game = activeChallengeGame;
+    const question = game.currentQuestion;
+    [...answerChoices.children].forEach((button, index) => {
+        if (index === question.correctIndex) button.classList.add('correct');
+    });
+
+    if (typeof game.closeReboundRound === 'function') game.closeReboundRound();
+    feedbackTitle.textContent = title;
     correctAnswerText.textContent = question.correct;
     explanationText.textContent = question.solution;
     ruleText.textContent = question.rule;
     feedbackPanel.classList.toggle('is-wrong', !isCorrect);
     feedbackPanel.classList.remove('hidden');
+    reboundInfo.classList.add('hidden');
+    solutionDetails.classList.remove('hidden');
+    continueChallenge.textContent = 'Continuar partida';
     continueChallenge.classList.remove('hidden');
-    game.updateDisplay();
-    gameMusic.playFeedback(isCorrect);
+    if (isCorrect) gameMusic.playFeedback(true);
     continueChallenge.focus();
 }
 
 function closeChemistryChallenge() {
-    if (!activeChallengeGame || !challengeResolved) return;
+    if (!activeChallengeGame || challengePhase !== 'solution') return;
 
     const game = activeChallengeGame;
     game.showQuestion = false;
     game.currentQuestion = null;
     questionModal.classList.add('hidden');
+    document.body.classList.remove('team-challenge-open');
     activeChallengeGame = null;
     challengeResolved = false;
+    challengePhase = 'answering';
 
     if (game.pendingChemistryReward && typeof game.applyChemistryReward === 'function') {
         challengeNow.disabled = true;
@@ -404,14 +499,25 @@ function closeChemistryChallenge() {
     }
 }
 
-continueChallenge.addEventListener('click', closeChemistryChallenge);
+function handleChallengeContinue() {
+    if (challengePhase === 'rebound') {
+        revealChemistrySolution({
+            isCorrect: false,
+            title: 'Nadie acierta. Comprueba la regla:'
+        });
+        return;
+    }
+    closeChemistryChallenge();
+}
+
+continueChallenge.addEventListener('click', handleChallengeContinue);
 
 document.addEventListener('keydown', (event) => {
     if (questionModal.classList.contains('hidden')) return;
 
     if (challengeResolved && event.key === 'Enter') {
         event.preventDefault();
-        closeChemistryChallenge();
+        handleChallengeContinue();
         return;
     }
 
@@ -420,7 +526,7 @@ document.addEventListener('keydown', (event) => {
         ? Number(event.key) - 1
         : ['A', 'B', 'C', 'D'].indexOf(key);
 
-    if (!challengeResolved && answerIndex >= 0) {
+    if (challengePhase === 'answering' && answerIndex >= 0) {
         event.preventDefault();
         resolveChemistryChallenge(answerIndex);
     }
@@ -437,6 +543,7 @@ const ROWS_FOR_QUESTION = 2;
 const LINE_CLEAR_OBSERVE_MS = 1100;
 const REWARD_FLASH_MS = 420;
 const REWARD_TOTAL_MS = 1650;
+const TEAM_TURN_TRANSITION_MS = 1700;
 
 const COLORS = {
     I: '#00D4FF', O: '#FFE135', T: '#AA66CC', S: '#66BB6A',
@@ -477,6 +584,16 @@ class TetrisGame {
         this.isRewardTransition = false;
         this.pendingChemistryReward = false;
         this.bonusFlashActive = false;
+        this.teams = [];
+        this.activeTeamIndex = 0;
+        this.turnDurationMs = 120000;
+        this.turnRemainingMs = this.turnDurationMs;
+        this.turnClockInterval = null;
+        this.lastTurnClockTick = null;
+        this.turnTransitionTimer = null;
+        this.isTurnTransition = false;
+        this.reboundOpen = false;
+        this.reboundAwardCallback = null;
 
         // Canvas setup
         this.canvas = document.getElementById('gameCanvas');
@@ -496,6 +613,14 @@ class TetrisGame {
         this.restartButton = document.getElementById('restartButton');
         this.rewardToast = document.getElementById('rewardToast');
         this.rewardToastText = document.getElementById('rewardToastText');
+        this.activeTeamLabel = document.getElementById('activeTeamLabel');
+        this.turnTimer = document.getElementById('turnTimer');
+        this.teamScoreboard = document.getElementById('teamScoreboard');
+        this.reboundBanner = document.getElementById('reboundBanner');
+        this.turnOverlay = document.getElementById('turnOverlay');
+        this.turnEndReason = document.getElementById('turnEndReason');
+        this.turnEndTitle = document.getElementById('turnEndTitle');
+        this.nextTeamText = document.getElementById('nextTeamText');
 
         // Controls
         this.leftBtn = document.getElementById('leftBtn');
@@ -628,6 +753,189 @@ class TetrisGame {
         this.board = Array(BOARD_HEIGHT).fill(null).map(() =>
             Array(BOARD_WIDTH).fill(null).map(() => ({ filled: false, color: null }))
         );
+    }
+
+    getActiveTeamLabel() {
+        return this.teams[this.activeTeamIndex]?.label || 'A';
+    }
+
+    awardActiveTeamPoint() {
+        const team = this.teams[this.activeTeamIndex];
+        if (!team) return;
+        team.score++;
+        this.renderTeamHud();
+    }
+
+    getReboundOrderIndices() {
+        return this.teams.slice(1).map((_, offset) =>
+            (this.activeTeamIndex + offset + 1) % this.teams.length
+        );
+    }
+
+    openReboundRound(onAward) {
+        this.reboundOpen = true;
+        this.reboundAwardCallback = onAward;
+        const order = this.getReboundOrderIndices();
+        this.renderTeamHud();
+        return order.map(index => this.teams[index].label);
+    }
+
+    awardReboundPoint(teamIndex) {
+        const eligible = this.getReboundOrderIndices();
+        if (!this.reboundOpen || !eligible.includes(teamIndex)) return;
+
+        const winner = this.teams[teamIndex];
+        winner.score++;
+        const callback = this.reboundAwardCallback;
+        this.reboundOpen = false;
+        this.reboundAwardCallback = null;
+        this.renderTeamHud();
+        if (callback) callback(winner.label);
+    }
+
+    closeReboundRound() {
+        this.reboundOpen = false;
+        this.reboundAwardCallback = null;
+        this.renderTeamHud();
+    }
+
+    renderTeamHud() {
+        const activeLabel = this.getActiveTeamLabel();
+        this.activeTeamLabel.textContent = `Equipo ${activeLabel}`;
+        this.teamScoreboard.replaceChildren();
+
+        const reboundOrder = this.reboundOpen ? this.getReboundOrderIndices() : [];
+        this.teams.forEach((team, index) => {
+            const card = document.createElement('div');
+            card.className = 'team-score-card';
+            if (index === this.activeTeamIndex) card.classList.add('is-active');
+            if (reboundOrder.includes(index)) card.classList.add('is-rebound');
+
+            const letter = document.createElement('span');
+            letter.className = 'team-letter';
+            letter.textContent = team.label;
+
+            const points = document.createElement('span');
+            points.className = 'team-points';
+            const value = document.createElement('strong');
+            value.textContent = team.score;
+            const caption = document.createElement('small');
+            caption.textContent = team.score === 1 ? 'respuesta correcta' : 'respuestas correctas';
+            points.append(value, caption);
+
+            const awardButton = document.createElement('button');
+            awardButton.type = 'button';
+            awardButton.className = 'award-point-btn';
+            awardButton.textContent = '+1';
+            awardButton.title = `Dar el punto de rebote al equipo ${team.label}`;
+            awardButton.disabled = !this.reboundOpen || index === this.activeTeamIndex;
+            awardButton.addEventListener('click', () => this.awardReboundPoint(index));
+
+            card.append(letter, points, awardButton);
+            this.teamScoreboard.appendChild(card);
+        });
+
+        if (this.reboundOpen) {
+            const orderText = reboundOrder.map(index => this.teams[index].label).join(' → ');
+            this.reboundBanner.textContent = `REBOTES · Orden: ${orderText}`;
+            this.reboundBanner.classList.remove('hidden');
+        } else {
+            this.reboundBanner.classList.add('hidden');
+        }
+        this.renderTurnTimer();
+    }
+
+    renderTurnTimer() {
+        const totalSeconds = Math.max(0, Math.ceil(this.turnRemainingMs / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        this.turnTimer.textContent = `${String(minutes).padStart(2, '0')}:${seconds}`;
+        this.turnTimer.classList.toggle('is-warning', totalSeconds <= 10 && totalSeconds > 0);
+    }
+
+    isTurnClockRunning() {
+        return currentGame === 'tetris'
+            && !this.isPaused
+            && !this.isGameOver
+            && !this.showQuestion
+            && !this.isQuestionTransition
+            && !this.isRewardTransition
+            && !this.isTurnTransition;
+    }
+
+    startTurnClock() {
+        clearInterval(this.turnClockInterval);
+        this.lastTurnClockTick = performance.now();
+        this.turnClockInterval = setInterval(() => {
+            const now = performance.now();
+            const elapsed = now - this.lastTurnClockTick;
+            this.lastTurnClockTick = now;
+            if (!this.isTurnClockRunning()) return;
+
+            this.turnRemainingMs = Math.max(0, this.turnRemainingMs - elapsed);
+            this.renderTurnTimer();
+            if (this.turnRemainingMs <= 0) this.endTeamTurn('time');
+        }, 100);
+    }
+
+    endTeamTurn(reason) {
+        if (this.isTurnTransition) return;
+
+        this.clearTransientEffects();
+        this.closeReboundRound();
+        this.isTurnTransition = true;
+        this.isGameOver = true;
+        this.isPaused = true;
+        clearTimeout(this.gameLoop);
+        const finishedLabel = this.getActiveTeamLabel();
+        const nextIndex = (this.activeTeamIndex + 1) % this.teams.length;
+        const nextLabel = this.teams[nextIndex].label;
+        this.turnEndReason.textContent = reason === 'gameOver' ? 'GAME OVER' : 'TIEMPO AGOTADO';
+        this.turnEndTitle.textContent = `Fin del turno del equipo ${finishedLabel}`;
+        this.nextTeamText.textContent = `A continuación: equipo ${nextLabel}`;
+        this.turnOverlay.classList.remove('hidden');
+        challengeNow.disabled = true;
+        gameMusic.pause();
+
+        clearTimeout(this.turnTransitionTimer);
+        this.turnTransitionTimer = setTimeout(() => {
+            this.turnTransitionTimer = null;
+            this.startTeamTurn(nextIndex);
+        }, TEAM_TURN_TRANSITION_MS);
+    }
+
+    startTeamTurn(teamIndex) {
+        clearTimeout(this.gameLoop);
+        this.clearTransientEffects();
+        this.activeTeamIndex = teamIndex;
+        this.turnRemainingMs = this.turnDurationMs;
+        this.initBoard();
+        this.currentPiece = this.randomTetromino();
+        this.nextPiece = this.randomTetromino();
+        this.currentPosition = { row: 0, col: Math.floor(BOARD_WIDTH / 2) - 1 };
+        this.score = 0;
+        this.rowsCleared = 0;
+        this.rowsSinceLastQuestion = 0;
+        this.level = 1;
+        this.isGameOver = false;
+        this.isPaused = false;
+        this.showQuestion = false;
+        this.isTurnTransition = false;
+        this.chemistryCorrect = 0;
+        this.chemistryAnswered = 0;
+        this.currentQuestion = null;
+        this.turnOverlay.classList.add('hidden');
+        this.gameOverOverlay.classList.add('hidden');
+        this.pauseOverlay.classList.add('hidden');
+        this.pauseBtn.textContent = 'Pausa';
+        challengeNow.disabled = false;
+        this.lastTurnClockTick = performance.now();
+        this.renderTeamHud();
+        this.updateDisplay();
+        this.drawNextPiece();
+        this.draw();
+        this.startGameLoop();
+        gameMusic.resume();
     }
 
     createTetromino(type) {
@@ -820,7 +1128,7 @@ class TetrisGame {
     }
 
     togglePause() {
-        if (this.isGameOver || this.showQuestion || this.isQuestionTransition || this.isRewardTransition) return;
+        if (this.isGameOver || this.showQuestion || this.isQuestionTransition || this.isRewardTransition || this.isTurnTransition) return;
         this.isPaused = !this.isPaused;
         this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
         this.pauseBtn.textContent = this.isPaused ? 'Continuar' : 'Pausa';
@@ -833,13 +1141,7 @@ class TetrisGame {
     }
 
     gameOver() {
-        this.clearTransientEffects();
-        this.isGameOver = true;
-        clearTimeout(this.gameLoop);
-        this.finalScore.textContent = this.score;
-        this.finalChemistryScore.textContent = this.formatChemistryScore(true);
-        this.gameOverOverlay.classList.remove('hidden');
-        gameMusic.pause();
+        this.endTeamTurn('gameOver');
     }
 
     showQuestionModal() {
@@ -897,31 +1199,7 @@ class TetrisGame {
     }
 
     restart() {
-        this.clearTransientEffects();
-        this.initBoard();
-        this.currentPiece = this.randomTetromino();
-        this.nextPiece = this.randomTetromino();
-        this.currentPosition = { row: 0, col: Math.floor(BOARD_WIDTH / 2) - 1 };
-        this.score = 0;
-        this.rowsCleared = 0;
-        this.rowsSinceLastQuestion = 0;
-        this.level = 1;
-        this.isGameOver = false;
-        this.isPaused = false;
-        this.showQuestion = false;
-        this.chemistryCorrect = 0;
-        this.chemistryAnswered = 0;
-        this.currentQuestion = null;
-
-        this.gameOverOverlay.classList.add('hidden');
-        this.pauseOverlay.classList.add('hidden');
-        questionModal.classList.add('hidden');
-        this.pauseBtn.textContent = 'Pausa';
-
-        this.updateDisplay();
-        this.drawNextPiece();
-        gameMusic.resume();
-        this.startGameLoop();
+        this.startTeamTurn(this.activeTeamIndex);
     }
 
     updateDisplay() {
@@ -1089,36 +1367,33 @@ class TetrisGame {
         this.gameLoop = setTimeout(loop, getDelay());
     }
 
-    start() {
+    start(config = {}) {
         clearTimeout(this.gameLoop);
+        clearTimeout(this.turnTransitionTimer);
+        clearInterval(this.turnClockInterval);
         this.clearTransientEffects();
-        this.initBoard();
-        this.currentPiece = this.randomTetromino();
-        this.nextPiece = this.randomTetromino();
-        this.currentPosition = { row: 0, col: Math.floor(BOARD_WIDTH / 2) - 1 };
-        this.score = 0;
-        this.rowsCleared = 0;
-        this.rowsSinceLastQuestion = 0;
-        this.level = 1;
-        this.isGameOver = false;
-        this.isPaused = false;
-        this.showQuestion = false;
-        this.chemistryCorrect = 0;
-        this.chemistryAnswered = 0;
-        this.currentQuestion = null;
-        this.gameOverOverlay.classList.add('hidden');
-        this.pauseOverlay.classList.add('hidden');
-        this.pauseBtn.textContent = 'Pausa';
-        this.updateDisplay();
-        this.drawNextPiece();
-        this.draw();
-        this.startGameLoop();
-        gameMusic.resume();
+        const teamCount = Math.min(8, Math.max(2, Number(config.teamCount) || 4));
+        const turnSeconds = Math.min(600, Math.max(30, Number(config.turnSeconds) || 120));
+        this.teams = Array.from({ length: teamCount }, (_, index) => ({
+            label: String.fromCharCode(65 + index),
+            score: 0
+        }));
+        this.turnDurationMs = turnSeconds * 1000;
+        this.activeTeamIndex = 0;
+        questionGenerator.reset();
+        this.startTurnClock();
+        this.startTeamTurn(0);
     }
 
     stop() {
         clearTimeout(this.gameLoop);
+        clearTimeout(this.turnTransitionTimer);
+        clearInterval(this.turnClockInterval);
+        this.turnTransitionTimer = null;
+        this.turnClockInterval = null;
+        this.closeReboundRound();
         this.clearTransientEffects();
+        this.turnOverlay.classList.add('hidden');
         gameMusic.pause();
     }
 }
@@ -2021,7 +2296,7 @@ function startGame(gameType) {
         }
         if (pacmanGame) pacmanGame.stop();
         if (!tetrisGame) tetrisGame = new TetrisGame();
-        tetrisGame.start();
+        tetrisGame.start(getTeamConfig());
     } else {
         gameTitle.textContent = 'Laberinto químico · Formulación binaria';
         document.getElementById('tetrisGame').classList.add('hidden');
@@ -2050,7 +2325,9 @@ function returnToMenu() {
     document.getElementById('pacmanPauseOverlay').classList.add('hidden');
     document.getElementById('pacmanGameOverOverlay').classList.add('hidden');
     questionModal.classList.add('hidden');
+    document.body.classList.remove('team-challenge-open');
     challengeNow.disabled = false;
     activeChallengeGame = null;
     challengeResolved = false;
+    challengePhase = 'answering';
 }

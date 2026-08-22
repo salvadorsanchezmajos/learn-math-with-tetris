@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Arcade educativo de Física y Química con retos de formulación y feedback inmediato.">
     <title>Física y Química Arcade</title>
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
     <!-- Game Selection Menu -->
@@ -25,7 +25,7 @@
             <div>
                 <span class="content-label">TETRIS POR EQUIPOS</span>
                 <h2 id="teamConfigTitle">Configuración de la sesión</h2>
-                <p>Los marcadores empiezan a cero. El reloj cuenta solo mientras las piezas están en juego.</p>
+                <p>Los marcadores empiezan a cero. El tiempo incluye juego y respuesta; se detiene en los rebotes o cuando lo decida el profesor.</p>
             </div>
             <label>
                 <span>Número de equipos</span>
@@ -78,7 +78,10 @@
                         <span class="turn-kicker">EN JUEGO</span>
                         <strong id="activeTeamLabel">Equipo A</strong>
                     </div>
-                    <div id="turnTimer" class="turn-timer" aria-label="Tiempo restante">02:00</div>
+                    <div class="turn-clock-controls">
+                        <div id="turnTimer" class="turn-timer" aria-label="Tiempo restante">02:00</div>
+                        <button id="turnClockToggle" class="turn-clock-toggle" type="button" aria-pressed="false">Detener reloj</button>
+                    </div>
                 </div>
                 <div id="reboundBanner" class="rebound-banner hidden" aria-live="assertive"></div>
                 <div id="teamScoreboard" class="team-scoreboard"></div>
@@ -100,7 +103,7 @@
                 <div id="pauseOverlay" class="overlay hidden">
                     <div class="overlay-content">
                         <h2>PAUSA</h2>
-                        <p>Pulsa «Continuar» para reanudar.</p>
+                        <p>Pulsa «Reanudar reloj» para continuar el turno.</p>
                     </div>
                 </div>
                 <div id="gameOverOverlay" class="overlay hidden">
@@ -240,6 +243,6 @@
     </div>
 
     <script src="question-banks.js?v=1"></script>
-    <script src="game.js?v=11"></script>
+    <script src="game.js?v=12"></script>
 </body>
 </html>

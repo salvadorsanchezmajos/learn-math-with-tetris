@@ -383,6 +383,41 @@ body {
     text-align: center;
 }
 
+.turn-clock-controls {
+    display: flex;
+    align-items: stretch;
+    gap: 7px;
+}
+
+.turn-clock-toggle {
+    min-width: 112px;
+    padding: 6px 10px;
+    color: #eaf7ff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(126, 232, 250, 0.46);
+    border-radius: 9px;
+    font-size: 0.7rem;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.turn-clock-toggle[aria-pressed="true"] {
+    color: #17223b;
+    background: #ffe066;
+    border-color: #ffe066;
+}
+
+.turn-clock-toggle:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.turn-timer.is-paused {
+    color: #17223b;
+    background: #c8d6e5;
+    animation: none;
+}
+
 .turn-timer.is-warning {
     color: #fff;
     background: #ef5350;
@@ -1015,6 +1050,20 @@ body {
 
     .team-scoreboard {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .turn-status {
+        align-items: flex-start;
+    }
+
+    .turn-clock-controls {
+        flex-direction: column;
+    }
+
+    .turn-clock-toggle {
+        min-width: 96px;
+        padding: 5px 7px;
+        font-size: 0.62rem;
     }
 
     .side-panel {

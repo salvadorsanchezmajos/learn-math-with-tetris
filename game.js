@@ -473,6 +473,32 @@ function revealChemistrySolution({ isCorrect, title }) {
     continueChallenge.focus();
 }
 
+function finishChallengePause(game) {
+    const remainsPaused = Boolean(game.isClockManuallyPaused);
+    game.isPaused = remainsPaused;
+    if (game.pauseOverlay) game.pauseOverlay.classList.toggle('hidden', !remainsPaused);
+    if (game.pauseBtn) game.pauseBtn.textContent = remainsPaused ? 'Reanudar juego' : 'Pausa';
+    challengeNow.disabled = remainsPaused;
+    if (remainsPaused) {
+        gameMusic.pause();
+    } else {
+        gameMusic.resume();
+    }
+}
+
+function cancelChemistryChallengeForTurnEnd(game) {
+    if (activeChallengeGame !== game) return;
+
+    game.showQuestion = false;
+    game.currentQuestion = null;
+    game.pendingChemistryReward = false;
+    questionModal.classList.add('hidden');
+    document.body.classList.remove('team-challenge-open');
+    activeChallengeGame = null;
+    challengeResolved = false;
+    challengePhase = 'answering';
+}
+
 function closeChemistryChallenge() {
     if (!activeChallengeGame || challengePhase !== 'solution') return;
 
@@ -488,14 +514,10 @@ function closeChemistryChallenge() {
     if (game.pendingChemistryReward && typeof game.applyChemistryReward === 'function') {
         challengeNow.disabled = true;
         game.applyChemistryReward(() => {
-            game.isPaused = false;
-            challengeNow.disabled = false;
-            gameMusic.resume();
+            finishChallengePause(game);
         });
     } else {
-        game.isPaused = false;
-        challengeNow.disabled = false;
-        gameMusic.resume();
+        finishChallengePause(game);
     }
 }
 
@@ -594,6 +616,7 @@ class TetrisGame {
         this.isTurnTransition = false;
         this.reboundOpen = false;
         this.reboundAwardCallback = null;
+        this.isClockManuallyPaused = false;
 
         // Canvas setup
         this.canvas = document.getElementById('gameCanvas');
@@ -615,6 +638,7 @@ class TetrisGame {
         this.rewardToastText = document.getElementById('rewardToastText');
         this.activeTeamLabel = document.getElementById('activeTeamLabel');
         this.turnTimer = document.getElementById('turnTimer');
+        this.turnClockToggle = document.getElementById('turnClockToggle');
         this.teamScoreboard = document.getElementById('teamScoreboard');
         this.reboundBanner = document.getElementById('reboundBanner');
         this.turnOverlay = document.getElementById('turnOverlay');
@@ -672,6 +696,7 @@ class TetrisGame {
         this.setupTouchButton(this.rotateBtn, () => this.rotate());
         this.setupTouchButton(this.dropBtn, () => this.hardDrop());
         this.setupTouchButton(this.pauseBtn, () => this.togglePause());
+        this.turnClockToggle.addEventListener('click', () => this.toggleTurnClock());
 
         // Canvas touch/click controls
         this.setupCanvasControls();
@@ -775,6 +800,7 @@ class TetrisGame {
     openReboundRound(onAward) {
         this.reboundOpen = true;
         this.reboundAwardCallback = onAward;
+        this.isClockManuallyPaused = true;
         const order = this.getReboundOrderIndices();
         this.renderTeamHud();
         return order.map(index => this.teams[index].label);
@@ -850,17 +876,43 @@ class TetrisGame {
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = String(totalSeconds % 60).padStart(2, '0');
         this.turnTimer.textContent = `${String(minutes).padStart(2, '0')}:${seconds}`;
-        this.turnTimer.classList.toggle('is-warning', totalSeconds <= 10 && totalSeconds > 0);
+        const isStopped = this.reboundOpen || this.isClockManuallyPaused;
+        this.turnTimer.classList.toggle('is-paused', isStopped);
+        this.turnTimer.classList.toggle('is-warning', !isStopped && totalSeconds <= 10 && totalSeconds > 0);
+        this.turnClockToggle.disabled = this.isTurnTransition || this.reboundOpen;
+        this.turnClockToggle.setAttribute('aria-pressed', String(isStopped));
+        this.turnClockToggle.textContent = this.reboundOpen
+            ? 'Detenido: rebote'
+            : this.isClockManuallyPaused
+                ? 'Reanudar reloj'
+                : 'Detener reloj';
     }
 
     isTurnClockRunning() {
         return currentGame === 'tetris'
-            && !this.isPaused
             && !this.isGameOver
-            && !this.showQuestion
-            && !this.isQuestionTransition
-            && !this.isRewardTransition
-            && !this.isTurnTransition;
+            && !this.isTurnTransition
+            && !this.reboundOpen
+            && !this.isClockManuallyPaused;
+    }
+
+    toggleTurnClock() {
+        if (this.isGameOver || this.isTurnTransition || this.reboundOpen) return;
+
+        this.isClockManuallyPaused = !this.isClockManuallyPaused;
+        const canControlGame = !this.showQuestion && !this.isQuestionTransition && !this.isRewardTransition;
+        if (canControlGame) {
+            this.isPaused = this.isClockManuallyPaused;
+            this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
+            this.pauseBtn.textContent = this.isPaused ? 'Reanudar juego' : 'Pausa';
+        }
+
+        if (this.isClockManuallyPaused) {
+            gameMusic.pause();
+        } else if (canControlGame) {
+            gameMusic.resume();
+        }
+        this.renderTurnTimer();
     }
 
     startTurnClock() {
@@ -881,11 +933,13 @@ class TetrisGame {
     endTeamTurn(reason) {
         if (this.isTurnTransition) return;
 
+        cancelChemistryChallengeForTurnEnd(this);
         this.clearTransientEffects();
         this.closeReboundRound();
         this.isTurnTransition = true;
         this.isGameOver = true;
         this.isPaused = true;
+        this.renderTurnTimer();
         clearTimeout(this.gameLoop);
         const finishedLabel = this.getActiveTeamLabel();
         const nextIndex = (this.activeTeamIndex + 1) % this.teams.length;
@@ -921,6 +975,7 @@ class TetrisGame {
         this.isPaused = false;
         this.showQuestion = false;
         this.isTurnTransition = false;
+        this.isClockManuallyPaused = false;
         this.chemistryCorrect = 0;
         this.chemistryAnswered = 0;
         this.currentQuestion = null;
@@ -1128,16 +1183,7 @@ class TetrisGame {
     }
 
     togglePause() {
-        if (this.isGameOver || this.showQuestion || this.isQuestionTransition || this.isRewardTransition || this.isTurnTransition) return;
-        this.isPaused = !this.isPaused;
-        this.pauseOverlay.classList.toggle('hidden', !this.isPaused);
-        this.pauseBtn.textContent = this.isPaused ? 'Continuar' : 'Pausa';
-
-        if (this.isPaused) {
-            gameMusic.pause();
-        } else {
-            gameMusic.resume();
-        }
+        this.toggleTurnClock();
     }
 
     gameOver() {

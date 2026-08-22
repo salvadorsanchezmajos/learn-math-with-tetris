@@ -6,6 +6,8 @@ El Tetris dispone de modo de aula por equipos: el profesor configura entre 2 y 8
 
 La tasa configurable de aciertos directos de referencia por minuto parte de 0,5 y se combina con el tiempo y los turnos iniciados para calcular una nota provisional mediante una curva saturante que vale 9,5 en la referencia y se aproxima a 10. Los marcadores separan aciertos propios y rebotes; cada rebote añade 0,5 puntos, con un máximo de 2.
 
+La interfaz adopta una identidad de «laboratorio arcade» contemporáneo: configuración en un panel docente claro, alto contraste para la pizarra digital, marcadores compactos, tablero protagonista y preguntas con jerarquía visual y feedback inequívoco. La renovación visual no modifica la lógica funcional validada.
+
 La aplicación es estática: no necesita instalación, cuenta, servidor ni dependencias. Puede abrirse directamente con `index.html` o publicarse en GitHub Pages.
 
 ## Estructura

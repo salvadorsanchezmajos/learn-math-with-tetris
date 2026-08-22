@@ -8,74 +8,126 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Arcade educativo de Física y Química con retos de formulación y feedback inmediato.">
     <title>Física y Química Arcade</title>
-    <link rel="stylesheet" href="style.css?v=13">
+    <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
-    <!-- Game Selection Menu -->
-    <div id="gameMenu" class="menu-container">
-        <p class="menu-eyebrow">LABORATORIO ARCADE · 3.º ESO</p>
-        <h1 class="menu-title">Física y Química Arcade</h1>
-        <p class="menu-subtitle">Juega, decide y comprueba la regla química al instante.</p>
-        <div class="content-card" aria-label="Contenido activo">
-            <span class="content-label">CONTENIDO ACTIVO</span>
-            <strong>Formulación de compuestos binarios</strong>
-            <small>32 retos · dificultad progresiva · solución razonada</small>
-        </div>
-        <section class="team-config" aria-labelledby="teamConfigTitle">
-            <div>
-                <span class="content-label">TETRIS POR EQUIPOS</span>
-                <h2 id="teamConfigTitle">Configuración de la sesión</h2>
-                <p>Los marcadores empiezan a cero. El tiempo incluye juego y respuesta; se detiene en los rebotes o cuando lo decida el profesor.</p>
-            </div>
-            <label>
-                <span>Número de equipos</span>
-                <input id="teamCountInput" type="number" min="2" max="8" step="1" value="4" inputmode="numeric">
-            </label>
-            <label>
-                <span>Tiempo por equipo</span>
-                <span class="input-with-unit">
-                    <input id="turnTimeInput" type="number" min="30" max="600" step="15" value="120" inputmode="numeric">
-                    <span>segundos</span>
-                </span>
-            </label>
-            <label>
-                <span>Ritmo de referencia</span>
-                <span class="input-with-unit">
-                    <input id="referenceRateInput" type="number" min="0.1" max="10" step="0.1" value="0.5" inputmode="decimal">
-                    <span>aciertos/min</span>
-                </span>
-                <small id="referenceRateHint">Con 120 s: 1 acierto propio equivale a 9,5.</small>
-            </label>
-        </section>
-        <div class="menu-buttons">
-            <button id="playTetris" class="menu-btn tetris-btn">
-                <span class="btn-icon" aria-hidden="true">▦</span>
-                <span class="btn-copy">
-                    <span class="btn-text">Tetris químico</span>
-                    <small>Un reto cada dos líneas</small>
-                </span>
-            </button>
-            <button id="playPacman" class="menu-btn pacman-btn">
-                <span class="btn-icon" aria-hidden="true">●</span>
-                <span class="btn-copy">
-                    <span class="btn-text">Laberinto químico</span>
-                    <small>Tres retos por nivel</small>
-                </span>
-            </button>
-        </div>
-        <p class="menu-hint">La partida se pausa al aparecer un reto. Tras responder, lee la explicación antes de continuar.</p>
+    <div class="site-backdrop" aria-hidden="true">
+        <span class="orb orb-cyan"></span>
+        <span class="orb orb-violet"></span>
+        <span class="orb orb-amber"></span>
     </div>
+    <!-- Game Selection Menu -->
+    <main id="gameMenu" class="menu-container">
+        <section class="menu-intro" aria-labelledby="arcadeTitle">
+            <div class="brand-lockup">
+                <span class="brand-mark" aria-hidden="true">
+                    <i></i><i></i><i></i><i></i>
+                </span>
+                <span>LABORATORIO ARCADE · 3.º ESO</span>
+            </div>
+            <p class="menu-eyebrow">APRENDER JUGANDO</p>
+            <h1 id="arcadeTitle" class="menu-title">Física y Química<br><span>en modo arcade.</span></h1>
+            <p class="menu-subtitle">Decide rápido, razona en equipo y comprueba la regla química al instante.</p>
+            <div class="content-card" aria-label="Contenido activo">
+                <span class="content-card-icon" aria-hidden="true">Fe</span>
+                <span class="content-card-copy">
+                    <span class="content-label">CONTENIDO ACTIVO</span>
+                    <strong>Formulación de compuestos binarios</strong>
+                    <small>32 retos · dificultad progresiva · solución razonada</small>
+                </span>
+                <span class="live-dot" title="Banco preparado">LISTO</span>
+            </div>
+            <div class="feature-pills" aria-label="Características de la actividad">
+                <span>Feedback inmediato</span>
+                <span>Juego por equipos</span>
+                <span>Nota objetiva</span>
+            </div>
+        </section>
+
+        <section class="menu-launchpad" aria-labelledby="teamConfigTitle">
+            <div class="launchpad-heading">
+                <div>
+                    <span class="content-label">PANEL DEL PROFESOR</span>
+                    <h2>Prepara la partida</h2>
+                </div>
+                <span class="session-status"><i></i> Sesión nueva</span>
+            </div>
+            <section class="team-config">
+                <div class="config-intro">
+                    <span class="config-number">01</span>
+                    <div>
+                        <h3 id="teamConfigTitle">Configura los equipos</h3>
+                        <p>Todos comienzan a cero. El tiempo incluye juego y respuesta.</p>
+                    </div>
+                </div>
+                <div class="config-fields">
+                    <label>
+                        <span>Número de equipos</span>
+                        <input id="teamCountInput" type="number" min="2" max="8" step="1" value="4" inputmode="numeric">
+                    </label>
+                    <label>
+                        <span>Tiempo por equipo</span>
+                        <span class="input-with-unit">
+                            <input id="turnTimeInput" type="number" min="30" max="600" step="15" value="120" inputmode="numeric">
+                            <span>segundos</span>
+                        </span>
+                    </label>
+                    <label>
+                        <span>Ritmo de referencia</span>
+                        <span class="input-with-unit">
+                            <input id="referenceRateInput" type="number" min="0.1" max="10" step="0.1" value="0.5" inputmode="decimal">
+                            <span>aciertos/min</span>
+                        </span>
+                        <small id="referenceRateHint">Con 120 s: 1 acierto propio equivale a 9,5.</small>
+                    </label>
+                </div>
+            </section>
+            <div class="mode-label">
+                <span class="config-number">02</span>
+                <div><strong>Elige el modo</strong><small>La configuración se aplica al Tetris por equipos</small></div>
+            </div>
+            <div class="menu-buttons">
+                <button id="playTetris" class="menu-btn tetris-btn">
+                    <span class="btn-icon tetris-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                    <span class="btn-copy">
+                        <span class="btn-kicker">EQUIPOS · EVALUABLE</span>
+                        <span class="btn-text">Tetris químico</span>
+                        <small>Un reto cada dos líneas</small>
+                    </span>
+                    <span class="btn-arrow" aria-hidden="true">→</span>
+                </button>
+                <button id="playPacman" class="menu-btn pacman-btn">
+                    <span class="btn-icon maze-icon" aria-hidden="true"><i></i><i></i></span>
+                    <span class="btn-copy">
+                        <span class="btn-kicker">INDIVIDUAL · PRÁCTICA</span>
+                        <span class="btn-text">Laberinto químico</span>
+                        <small>Tres retos por nivel</small>
+                    </span>
+                    <span class="btn-arrow" aria-hidden="true">→</span>
+                </button>
+            </div>
+            <p class="menu-hint"><span aria-hidden="true">ⓘ</span> La partida se pausa al aparecer un reto. La explicación se muestra antes de continuar.</p>
+        </section>
+    </main>
 
     <div class="game-container hidden" id="gameContainer">
         <div class="header">
             <div class="header-row">
-                <button id="backToMenu" class="back-btn">← Inicio</button>
-                <h1 id="gameTitle">Tetris químico</h1>
-                <button id="challengeNow" class="challenge-now-btn" title="Lanzar un reto sin esperar al siguiente hito del juego">Reto ahora</button>
-                <button id="soundToggle" class="sound-btn" title="Activar o desactivar sonido">
-                    <span id="soundOn">&#9835; Sonido</span>
-                    <span id="soundOff" class="hidden">&#9835; Silencio</span>
-                </button>
+                <div class="game-brand">
+                    <span class="brand-mark mini" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                    <div class="game-title-lockup">
+                        <span>LABORATORIO ARCADE</span>
+                        <h1 id="gameTitle">Tetris químico</h1>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="backToMenu" class="back-btn"><span aria-hidden="true">←</span> Inicio</button>
+                    <button id="challengeNow" class="challenge-now-btn" title="Lanzar un reto sin esperar al siguiente hito del juego"><span aria-hidden="true">＋</span> Reto ahora</button>
+                    <button id="soundToggle" class="sound-btn" title="Activar o desactivar sonido">
+                        <span id="soundOn">&#9835; Sonido</span>
+                        <span id="soundOff" class="hidden">&#9835; Silencio</span>
+                    </button>
+                </div>
             </div>
         </div>
 

@@ -82,6 +82,45 @@ turnTimeInput.addEventListener('change', getTeamConfig);
 referenceRateInput.addEventListener('change', getTeamConfig);
 getTeamConfig();
 
+// Pantalla completa: disponible tanto en la configuración como durante la partida.
+const fullscreenButtons = Array.from(document.querySelectorAll('[data-fullscreen-button]'));
+
+function getFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+}
+
+function syncFullscreenButtons() {
+    const isFullscreen = Boolean(getFullscreenElement());
+    fullscreenButtons.forEach((button) => {
+        button.setAttribute('aria-pressed', String(isFullscreen));
+        button.title = isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa';
+        const label = button.querySelector('[data-fullscreen-label]');
+        const icon = button.querySelector('[data-fullscreen-icon]');
+        if (label) label.textContent = isFullscreen ? 'Salir' : 'Pantalla completa';
+        if (icon) icon.textContent = isFullscreen ? '↙' : '⛶';
+    });
+}
+
+async function toggleFullscreen() {
+    try {
+        if (getFullscreenElement()) {
+            if (document.exitFullscreen) await document.exitFullscreen();
+            else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+        } else if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            await document.documentElement.webkitRequestFullscreen();
+        }
+    } catch (error) {
+        // El juego permanece operativo si el navegador impide este modo.
+    }
+}
+
+fullscreenButtons.forEach((button) => button.addEventListener('click', toggleFullscreen));
+document.addEventListener('fullscreenchange', syncFullscreenButtons);
+document.addEventListener('webkitfullscreenchange', syncFullscreenButtons);
+syncFullscreenButtons();
+
 // ============================================================================
 // SHARED MUSIC SYSTEM
 // ============================================================================

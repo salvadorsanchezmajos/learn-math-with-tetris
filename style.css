@@ -1637,6 +1637,41 @@ body::before {
     letter-spacing: -0.035em;
 }
 
+.launchpad-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fullscreen-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 7px 12px;
+    color: #c8d5e5;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.fullscreen-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--line-strong);
+}
+
+.fullscreen-icon {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
 .session-status {
     padding: 8px 11px;
     background: rgba(155, 234, 125, 0.07);
@@ -2763,10 +2798,15 @@ input:focus-visible {
     }
 
     .back-btn,
-    .challenge-now-btn {
+    .challenge-now-btn,
+    .fullscreen-btn {
         min-height: 32px;
         padding: 6px 9px;
         font-size: 0.6rem;
+    }
+
+    .fullscreen-label {
+        display: none;
     }
 
     #tetrisGame {
